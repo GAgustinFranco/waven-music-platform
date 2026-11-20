@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: waven
+      POSTGRES_PASSWORD: waven
+      POSTGRES_DB: waven
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U waven -d waven']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  db-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: waven
+      POSTGRES_PASSWORD: waven
+      POSTGRES_DB: waven_test
+    ports:
+      - '${DB_TEST_PORT:-5433}:5432'
+    # Test data is disposable: keep it in memory for speed.
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U waven -d waven_test']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  db-data:

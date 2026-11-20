@@ -20,9 +20,9 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - CI: lint, typecheck, test and build on every push, with a Postgres service container.
 
 **Acceptance criteria**
-- [ ] `pnpm i && pnpm db:up && pnpm dev` starts web (3000) and api (4000).
-- [ ] `/api/health` responds from the web.
-- [ ] The API does not start if a required environment variable is missing.
+- [x] `pnpm i && pnpm db:up && pnpm dev` starts web (3000) and api (4000).
+- [x] `/api/health` responds from the web.
+- [x] The API does not start if a required environment variable is missing.
 - [ ] CI is green on GitHub.
 
 ### Phase 1 — Authentication

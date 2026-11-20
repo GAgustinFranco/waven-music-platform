@@ -17,7 +17,7 @@ docs/  docker-compose.yml  .github/workflows/
 ```
 
 ## Commands
-- `pnpm db:up` / `pnpm db:down`: start or stop Postgres (dev on 5432, test on 5433)
+- `pnpm db:up` / `pnpm db:down`: start or stop Postgres (dev on 5432, test on 5433; override with `DB_PORT`/`DB_TEST_PORT` in the root `.env`)
 - `pnpm dev`: web on 3000 and api on 4000 (the web proxies `/api` → api)
 - `pnpm -F api migration:generate src/database/migrations/<Name>` · `pnpm -F api migration:run`
 - `pnpm -F api seed`: imports from Jamendo · `pnpm -F api catalog:import <dir>`: local only
@@ -31,6 +31,7 @@ docs/  docker-compose.yml  .github/workflows/
 ## Code conventions
 - Conventional Commits (`feat(api): …`, `fix(web): …`), small commits per feature.
 - No `any` and no `@ts-ignore`. Validate at the boundaries with class-validator DTOs and `ParseUUIDPipe`.
+- The API is ESM (Nest 12): relative imports end in `.js`, use `import.meta.dirname`, and tests run on Vitest (`vi.fn()`).
 - Nest: one module per domain; thin controllers, logic in services. Resource ownership is checked in the service, and someone else's resource returns 404.
 - Never `synchronize: true`. Every schema change ships with its migration.
 - API errors: `{ statusCode, code, message }`, with a stable `code` (for example, `PLAN_LIMIT_REACHED`).

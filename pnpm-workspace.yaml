@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+
+catalog:
+  typescript: 6.0.3
+  '@types/node': 24.19.2
+
+# Dependencies allowed to run install scripts (false = blocked).
+allowBuilds:
+  '@scarf/scarf': false
+  sharp: false
+  unrs-resolver: false
