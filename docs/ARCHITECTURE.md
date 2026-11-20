@@ -107,8 +107,8 @@ waven-music-platform/
 
 | Level | Tool | What it covers |
 |---|---|---|
-| Unit | Jest | Services with logic: effective plan, limits, token rotation, subscription state machine, webhook signature, reordering. |
-| API e2e | Jest + supertest + real Postgres (`db-test` in Compose; service container in CI) | Auth and refresh, per-resource authorization, playlist CRUD, Range (206 and 416), checkout + idempotent webhook with a fake `PaymentProvider`, admin endpoints. |
+| Unit | Vitest | Services with logic: effective plan, limits, token rotation, subscription state machine, webhook signature, reordering. |
+| API e2e | Vitest + supertest + real Postgres (`db-test` in Compose; service container in CI) | Auth and refresh, per-resource authorization, playlist CRUD, Range (206 and 416), checkout + idempotent webhook with a fake `PaymentProvider`, admin endpoints. |
 | Web e2e | Playwright | Login (test bypass) → play an album → create a playlist → add a track → search → upgrade flow with the fake provider. |
 
 - Each e2e suite runs migrations on a clean database, with a minimal fixture of 3 synthetic audio tracks generated with ffmpeg.

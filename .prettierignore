@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+dist/
+.next/
+coverage/
+apps/api/openapi.json
+apps/web/src/lib/api/schema.ts
+apps/web/AGENTS.md
+*.md

@@ -172,3 +172,9 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - Deployment: web on Vercel, API on Render and managed PostgreSQL (Render or Neon). In production, audio and images go to Cloudflare R2: Render's disk is ephemeral on the free plan and R2 does not charge for egress. The 10 GB R2 free tier fits about 900 tracks in two qualities.
 - The API on Render's free plan sleeps without traffic, so the first request can take about 50 s. The README warns about it.
 - The UI is English only and dark theme only.
+- The API is ESM (the NestJS 12 default): relative imports end in `.js`. Tests run on Vitest, the Nest 12 template default, instead of Jest.
+- The API has no global route prefix: the web proxy strips `/api` (`/api/health` → `/health`), so Swagger lives at `/docs` on the API and `/api/docs` through the web.
+- The TypeORM CLI runs against the compiled `dist`, because decorator metadata needs `tsc`. That is why the migration scripts build first.
+- The Postgres host ports default to 5432 (dev) and 5433 (test), and can be overridden with `DB_PORT`/`DB_TEST_PORT` in the root `.env` when a local Postgres already uses them. `DATABASE_URL` and `TEST_DATABASE_URL` must use the same ports.
+- ESLint stays on v9 until `eslint-plugin-react` (used by `eslint-config-next`) supports v10.
+- Dependency versions are pinned exactly. pnpm's minimum release age is respected: releases published less than a day ago are not used.
