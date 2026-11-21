@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, Suspense, useState } from 'react';
 import { AuthBootstrap } from '@/features/auth/auth-bootstrap';
 import { ApiError } from '@/lib/api/queries';
 
@@ -23,7 +23,10 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthBootstrap />
+      {/* Reads the pathname (request-time data); it renders nothing, so no fallback. */}
+      <Suspense>
+        <AuthBootstrap />
+      </Suspense>
       {children}
     </QueryClientProvider>
   );

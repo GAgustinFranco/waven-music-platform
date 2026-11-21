@@ -56,10 +56,10 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Home, Artist and Album pages with TanStack Query; empty and error states.
 
 **Acceptance criteria**
-- [ ] Looks right at 360, 768, 1280 and 1920 px.
-- [ ] Lighthouse a11y ≥ 95 on Home and Album.
-- [ ] Full keyboard navigation with visible focus.
-- [ ] Zero hardcoded color values outside the tokens.
+- [x] Looks right at 360, 768, 1280 and 1920 px.
+- [x] Lighthouse a11y ≥ 95 on Home and Album.
+- [x] Full keyboard navigation with visible focus.
+- [x] Zero hardcoded color values outside the tokens.
 
 ### Phase 4 — Player
 - `player.store` (queue, index, shuffle, repeat, volume and mute), audio engine with next-track preloading and token renewal on expiry.

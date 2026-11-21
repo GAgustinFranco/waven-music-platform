@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "waven-api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "api", "dev"],
+      "port": 4000
+    },
+    {
+      "name": "waven-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "web", "dev"],
+      "port": 3000
+    }
+  ]
+}
