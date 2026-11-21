@@ -206,3 +206,4 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - Track details (license and attribution link) open in a popover from an info button on every track row.
 - Search, Library and Premium are "Coming soon" pages until phases 6, 5 and 9, so the navigation is complete from the start.
 - The web runs unit tests with Vitest (the same version as the API) for pure helpers; component tests are not set up yet.
+- When the session cannot be restored on load because the API is unreachable (network error or 5xx, including the web proxy's error), the web shows "We can't reach Waven right now" with a retry button instead of signing the user out. Only 4xx answers from `/auth/refresh` sign the user out. A failed refresh while already signed in keeps the current state, and each query shows its own error.
