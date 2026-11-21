@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { EmptyState } from '@/components/catalog/states';
 import { Button } from '@/components/ui/button';
 
-export function NotFoundState({ kind }: { kind: 'album' | 'artist' }) {
+export function NotFoundState({ kind }: { kind: 'album' | 'artist' | 'playlist' }) {
   return (
     <div className="px-gutter lg:px-gutter-lg pt-20">
       <EmptyState

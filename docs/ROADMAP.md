@@ -77,9 +77,9 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Web: library in the sidebar, playlist page with drag and drop, "Add to playlist" context menu, optimistic hearts and favorites page.
 
 **Acceptance criteria**
-- [ ] A Free user's sixth attempt shows the upgrade prompt.
-- [ ] Someone else's playlist returns 404 (e2e test).
-- [ ] Reordering persists and stays consistent with two tabs open.
+- [x] A Free user's sixth attempt shows the upgrade prompt.
+- [x] Someone else's playlist returns 404 (e2e test).
+- [x] Reordering persists and stays consistent with two tabs open.
 
 ### Phase 6 — Search and history
 - Backend: `pg_trgm` + `unaccent` with GIN indexes, `/search` grouped by type and `GET /me/history`.

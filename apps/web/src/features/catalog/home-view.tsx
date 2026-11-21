@@ -7,6 +7,7 @@ import { Section } from '@/components/catalog/section';
 import { EmptyState, ErrorState, LoadingStatus } from '@/components/catalog/states';
 import { TrackList, TrackListSkeleton, TrackRow } from '@/components/catalog/track-row';
 import { useSessionReady } from '@/features/auth/use-session-ready';
+import { useLikedSet } from '@/features/library/use-liked';
 import { homeQuery } from '@/lib/api/catalog';
 import { releaseYear } from '@/lib/format';
 import { type PlaySource, usePlayerStore } from '@/stores/player.store';
@@ -20,6 +21,9 @@ export function HomeView() {
     enabled: ready,
   });
   const playQueue = usePlayerStore((state) => state.playQueue);
+  const liked = useLikedSet(
+    [...(data?.popularTracks ?? []), ...(data?.recentlyPlayed ?? [])].map((track) => track.id),
+  );
 
   return (
     <div className="px-gutter lg:px-gutter-lg flex flex-col gap-10 pt-20">
@@ -76,6 +80,7 @@ export function HomeView() {
                     showCover
                     showAlbum
                     onPlay={() => playQueue(data.popularTracks, index, HOME)}
+                    liked={liked?.has(track.id)}
                   />
                 ))}
               </TrackList>
@@ -100,6 +105,7 @@ export function HomeView() {
                     showCover
                     showAlbum
                     onPlay={() => playQueue(data.recentlyPlayed, index, HOME)}
+                    liked={liked?.has(track.id)}
                   />
                 ))}
               </TrackList>

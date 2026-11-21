@@ -2,11 +2,12 @@
 
 import { AudioLines, ExternalLink, Info, Pause, Play } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type CSSProperties, type ReactNode, type Ref, useState } from 'react';
 import { cn } from 'cn';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LikeButton, TrackMenu } from '@/features/library/track-actions';
 import type { Track } from '@/lib/api/catalog';
 import { describeDuration, formatDuration } from '@/lib/format';
 import { selectCurrentTrack, usePlayerStore } from '@/stores/player.store';
@@ -24,6 +25,17 @@ interface TrackRowProps {
   showArtist?: boolean;
   /** Plays this list from this track; without it the row has no play button. */
   onPlay?: () => void;
+  /** Heart state; the heart is hidden while it is unknown. */
+  liked?: boolean;
+  /** A deleted or unplayable track kept in a playlist (SPEC §6.7). */
+  unavailable?: boolean;
+  /** Extra items for the row's menu, e.g. "Remove from this playlist". */
+  menuItems?: ReactNode;
+  /** Drag handle of reorderable lists, shown after the duration. */
+  handle?: ReactNode;
+  ref?: Ref<HTMLLIElement>;
+  style?: CSSProperties;
+  dragging?: boolean;
 }
 
 const GRID = 'grid grid-cols-[--spacing(8)_minmax(0,1fr)_auto_auto] items-center gap-3 lg:gap-4';
@@ -36,27 +48,45 @@ export function TrackRow({
   showAlbum = false,
   showArtist = true,
   onPlay,
+  liked,
+  unavailable = false,
+  menuItems,
+  handle,
+  ref,
+  style,
+  dragging = false,
 }: TrackRowProps) {
   const isCurrent = usePlayerStore((state) => selectCurrentTrack(state)?.id === track.id);
   const isPlaying = usePlayerStore((state) => state.isPlaying) && isCurrent;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const playable = onPlay !== undefined && !unavailable;
 
   return (
     <li
+      ref={ref}
+      style={style}
       aria-current={isCurrent ? 'true' : undefined}
-      className={`group/row ${GRID} ${showAlbum ? GRID_WITH_ALBUM : ''} hover:bg-surface-2 ease-standard relative rounded-sm px-2 py-2 transition-colors duration-150 sm:px-4`}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        setMenuOpen(true);
+      }}
+      className={cn(
+        `group/row ${GRID} ${showAlbum ? GRID_WITH_ALBUM : ''} hover:bg-surface-2 ease-standard relative rounded-sm px-2 py-2 transition-colors duration-150 sm:px-4`,
+        dragging && 'bg-elevated z-10 shadow-lg',
+      )}
     >
       <div className="relative flex h-8 items-center justify-end">
         <span
           className={cn(
             'font-mono text-sm tabular-nums',
             isCurrent ? 'text-brand' : 'text-muted-foreground',
-            onPlay &&
+            playable &&
               'group-hover/row:invisible group-has-[[data-play]:focus-visible]/row:invisible [@media(hover:none)]:invisible',
           )}
         >
           {isPlaying ? <AudioLines role="img" aria-label="Playing" className="size-4" /> : position}
         </span>
-        {onPlay ? (
+        {playable ? (
           <TrackPlayButton
             title={track.title}
             isCurrent={isCurrent}
@@ -68,13 +98,24 @@ export function TrackRow({
 
       <div className="flex min-w-0 items-center gap-3">
         {showCover ? (
-          <CoverImage image={track.album.cover} sizes="40px" className="size-10 shrink-0" />
+          <CoverImage
+            image={track.album.cover}
+            sizes="40px"
+            className={cn('size-10 shrink-0', unavailable && 'opacity-50')}
+          />
         ) : null}
         <div className="min-w-0">
-          <p className={cn('truncate text-base font-medium', isCurrent && 'text-brand')}>
+          <p
+            className={cn(
+              'truncate text-base font-medium',
+              isCurrent && 'text-brand',
+              unavailable && 'text-muted-foreground line-through',
+            )}
+          >
             {track.title}
           </p>
-          {showArtist ? (
+          {unavailable ? <p className="text-muted-foreground text-xs">Unavailable</p> : null}
+          {showArtist && !unavailable ? (
             <Link
               href={`/artists/${track.artist.id}`}
               className="text-muted-foreground hover:text-foreground block truncate rounded-sm py-0.5 text-sm hover:underline"
@@ -94,12 +135,21 @@ export function TrackRow({
         </Link>
       ) : null}
 
-      <TrackDetails track={track} />
+      <div className="flex items-center">
+        {liked !== undefined && !unavailable ? <LikeButton track={track} liked={liked} /> : null}
+        <TrackDetails track={track} />
+        <TrackMenu track={track} open={menuOpen} onOpenChange={setMenuOpen}>
+          {menuItems}
+        </TrackMenu>
+      </div>
 
-      <span className="text-muted-foreground min-w-[5ch] text-right font-mono text-sm tabular-nums">
-        <span aria-hidden="true">{formatDuration(track.durationMs)}</span>
-        <span className="sr-only">{describeDuration(track.durationMs)}</span>
-      </span>
+      <div className="flex items-center gap-1">
+        <span className="text-muted-foreground min-w-[5ch] text-right font-mono text-sm tabular-nums">
+          <span aria-hidden="true">{formatDuration(track.durationMs)}</span>
+          <span className="sr-only">{describeDuration(track.durationMs)}</span>
+        </span>
+        {handle}
+      </div>
     </li>
   );
 }

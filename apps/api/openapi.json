@@ -103,7 +103,7 @@
               "minimum": 1,
               "maximum": 50,
               "default": 20,
-              "type": "object"
+              "type": "integer"
             }
           },
           {
@@ -113,7 +113,7 @@
             "schema": {
               "minimum": 0,
               "default": 0,
-              "type": "object"
+              "type": "integer"
             }
           }
         ],
@@ -257,7 +257,7 @@
               "minimum": 1,
               "maximum": 50,
               "default": 20,
-              "type": "object"
+              "type": "integer"
             }
           },
           {
@@ -267,7 +267,7 @@
             "schema": {
               "minimum": 0,
               "default": 0,
-              "type": "object"
+              "type": "integer"
             }
           }
         ],
@@ -349,7 +349,7 @@
               "minimum": 1,
               "maximum": 50,
               "default": 20,
-              "type": "object"
+              "type": "integer"
             }
           },
           {
@@ -359,7 +359,7 @@
             "schema": {
               "minimum": 0,
               "default": 0,
-              "type": "object"
+              "type": "integer"
             }
           }
         ],
@@ -511,7 +511,7 @@
               "minimum": 1,
               "maximum": 50,
               "default": 20,
-              "type": "object"
+              "type": "integer"
             }
           },
           {
@@ -521,7 +521,7 @@
             "schema": {
               "minimum": 0,
               "default": 0,
-              "type": "object"
+              "type": "integer"
             }
           }
         ],
@@ -802,7 +802,7 @@
               "minimum": 1,
               "maximum": 50,
               "default": 20,
-              "type": "object"
+              "type": "integer"
             }
           },
           {
@@ -812,7 +812,7 @@
             "schema": {
               "minimum": 0,
               "default": 0,
-              "type": "object"
+              "type": "integer"
             }
           },
           {
@@ -1105,7 +1105,7 @@
               "minimum": 1,
               "maximum": 50,
               "default": 20,
-              "type": "object"
+              "type": "integer"
             }
           },
           {
@@ -1115,7 +1115,7 @@
             "schema": {
               "minimum": 0,
               "default": 0,
-              "type": "object"
+              "type": "integer"
             }
           },
           {
@@ -1520,6 +1520,552 @@
         ],
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/me/playlists": {
+      "get": {
+        "operationId": "MyPlaylistsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Own playlists, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/playlists": {
+      "post": {
+        "operationId": "PlaylistsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlaylistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "403": {
+            "description": "`PLAN_LIMIT_REACHED`: the plan allows no more playlists."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/playlists/{id}": {
+      "get": {
+        "operationId": "PlaylistsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "404": {
+            "description": "Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      },
+      "patch": {
+        "operationId": "PlaylistsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlaylistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "404": {
+            "description": "Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      },
+      "delete": {
+        "operationId": "PlaylistsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted with all its entries."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "404": {
+            "description": "Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/playlists/{id}/tracks": {
+      "post": {
+        "operationId": "PlaylistsController_addTracks",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTracksDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The playlist after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "404": {
+            "description": "Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). Or a track that is not playable."
+          },
+          "409": {
+            "description": "`PLAYLIST_FULL`: it would exceed 500 tracks."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/playlists/{id}/tracks/{entryId}": {
+      "delete": {
+        "operationId": "PlaylistsController_removeEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The playlist after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "404": {
+            "description": "Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). Or an unknown entry (`ENTRY_NOT_FOUND`)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/playlists/{id}/tracks/{entryId}/position": {
+      "patch": {
+        "operationId": "PlaylistsController_moveEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The playlist after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "404": {
+            "description": "Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). Or an unknown entry (`ENTRY_NOT_FOUND`)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/me/favorites": {
+      "get": {
+        "operationId": "FavoritesController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liked tracks, most recent first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FavoritePageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/me/favorites/contains": {
+      "get": {
+        "operationId": "FavoritesController_contains",
+        "parameters": [
+          {
+            "name": "ids",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated track ids, up to 50.",
+            "schema": {
+              "example": "0b7c…,9f21…",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FavoritesContainsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing, malformed or too many ids."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/me/favorites/{trackId}": {
+      "put": {
+        "operationId": "FavoritesController_add",
+        "parameters": [
+          {
+            "name": "trackId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Liked, or already liked."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "404": {
+            "description": "Unknown, deleted or not yet playable track."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      },
+      "delete": {
+        "operationId": "FavoritesController_remove",
+        "parameters": [
+          {
+            "name": "trackId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Unliked, or was not liked."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
         ]
       }
     }
@@ -2620,6 +3166,294 @@
           "trackId",
           "msPlayed",
           "context"
+        ]
+      },
+      "PlaylistSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackCount": {
+            "type": "number"
+          },
+          "covers": {
+            "description": "Up to 4 distinct album covers, in playlist order, for a mosaic.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageSetDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "trackCount",
+          "covers",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PlaylistPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaylistSummaryDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ]
+      },
+      "CreatePlaylistDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Defaults to \"My Playlist #n\"."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 300
+          }
+        }
+      },
+      "PlaylistEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Entry id; a track may appear more than once."
+          },
+          "position": {
+            "type": "number",
+            "description": "0-based and contiguous."
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "available": {
+            "type": "boolean",
+            "description": "`false` when the track was deleted or is not playable."
+          },
+          "track": {
+            "$ref": "#/components/schemas/TrackDto"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "addedAt",
+          "available",
+          "track"
+        ]
+      },
+      "PlaylistDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackCount": {
+            "type": "number"
+          },
+          "covers": {
+            "description": "Up to 4 distinct album covers, in playlist order, for a mosaic.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageSetDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "durationMs": {
+            "type": "number",
+            "description": "Sum of the available track durations."
+          },
+          "entries": {
+            "description": "Every entry, ordered by position.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaylistEntryDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "trackCount",
+          "covers",
+          "createdAt",
+          "updatedAt",
+          "durationMs",
+          "entries"
+        ]
+      },
+      "UpdatePlaylistDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 300,
+            "description": "`null` or an empty string clears it."
+          }
+        }
+      },
+      "AddTracksDto": {
+        "type": "object",
+        "properties": {
+          "trackIds": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "Added in this order; repeats are allowed.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "position": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Where the first track goes. Defaults to the end; larger values mean the end."
+          }
+        },
+        "required": [
+          "trackIds"
+        ]
+      },
+      "MoveEntryDto": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Target position, 0-based. Values past the end move the entry to the end."
+          }
+        },
+        "required": [
+          "position"
+        ]
+      },
+      "FavoriteDto": {
+        "type": "object",
+        "properties": {
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "available": {
+            "type": "boolean",
+            "description": "`false` when the track was deleted or is not playable."
+          },
+          "track": {
+            "$ref": "#/components/schemas/TrackDto"
+          }
+        },
+        "required": [
+          "addedAt",
+          "available",
+          "track"
+        ]
+      },
+      "FavoritePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FavoriteDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ]
+      },
+      "FavoritesContainsDto": {
+        "type": "object",
+        "properties": {
+          "trackIds": {
+            "description": "The requested ids that are liked.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "trackIds"
         ]
       }
     }

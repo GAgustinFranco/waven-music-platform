@@ -12,4 +12,11 @@ describe('isActive', () => {
     expect(isActive('/library/playlists/1', '/library')).toBe(true);
     expect(isActive('/libraryx', '/library')).toBe(false);
   });
+
+  it('treats playlists and Liked Songs as library pages', () => {
+    expect(isActive('/playlists/1', '/library')).toBe(true);
+    expect(isActive('/favorites', '/library')).toBe(true);
+    expect(isActive('/favorites', '/')).toBe(false);
+    expect(isActive('/playlists/1', '/search')).toBe(false);
+  });
 });

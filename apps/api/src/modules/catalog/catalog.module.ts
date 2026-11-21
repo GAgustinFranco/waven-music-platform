@@ -32,6 +32,6 @@ import { TrackAudioService } from './track-audio.service.js';
     AdminTracksController,
   ],
   providers: [CatalogService, CatalogMapper, AdminCatalogService, TrackAudioService],
-  exports: [CatalogService, AdminCatalogService, TrackAudioService],
+  exports: [CatalogService, CatalogMapper, AdminCatalogService, TrackAudioService],
 })
 export class CatalogModule {}
