@@ -1,14 +1,18 @@
 import { AudioLines } from 'lucide-react';
 import Link from 'next/link';
 import { BottomNav } from '@/components/layout/bottom-nav';
-import { PlayerBarSlot } from '@/components/layout/player-bar-slot';
+import { MiniPlayer } from '@/components/player/mini-player';
+import { PlayerAnnouncer } from '@/components/player/player-announcer';
+import { PlayerBar } from '@/components/player/player-bar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { UserMenu } from '@/components/layout/user-menu';
 import { SessionGate } from '@/features/auth/session-gate';
+import { PlayerEngine } from '@/features/player/player-engine';
 
 /**
  * App shell (ARCHITECTURE §7): sidebar + scrolling content + player bar on
- * tablet/desktop, content + bottom navigation on mobile. Only the content scrolls.
+ * tablet/desktop; content + mini player + bottom navigation on mobile. Only the
+ * content scrolls.
  */
 export default function AppLayout({ children }: LayoutProps<'/'>) {
   return (
@@ -39,8 +43,11 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
         </main>
       </div>
 
-      <PlayerBarSlot />
+      <PlayerBar />
+      <MiniPlayer />
       <BottomNav />
+      <PlayerEngine />
+      <PlayerAnnouncer />
     </div>
   );
 }

@@ -115,7 +115,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | GET | `/me/favorites` | user | |
 | GET | `/me/favorites/contains?ids=` | user | To render the hearts in a list. |
 | PUT · DELETE | `/me/favorites/:trackId` | user | Idempotent. |
-| POST | `/me/history` | user | Takes `{ trackId, msPlayed, context }`. |
+| POST | `/me/history` | user | Takes `{ playId, trackId, msPlayed, context }`; 204. Repeating a `playId` is a no-op. |
 | GET | `/me/history` | user | |
 
 **Billing**
@@ -207,3 +207,16 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - Search, Library and Premium are "Coming soon" pages until phases 6, 5 and 9, so the navigation is complete from the start.
 - The web runs unit tests with Vitest (the same version as the API) for pure helpers; component tests are not set up yet.
 - When the session cannot be restored on load because the API is unreachable (network error or 5xx, including the web proxy's error), the web shows "We can't reach Waven right now" with a retry button instead of signing the user out. Only 4xx answers from `/auth/refresh` sign the user out. A failed refresh while already signed in keeps the current state, and each query shows its own error.
+- `POST /me/history` takes a client-generated `playId` (one per play), unique per user, so retries never count a play twice; it answers 204 either way. A play shorter than the threshold gets 422 `PLAY_TOO_SHORT`.
+- The "whole track" threshold for tracks under 30 s allows 1 s of tolerance (`durationMs − 1000`), because the browser's playback clock and the duration read from the encoded file differ by a few frames. A track with an unknown duration needs 30 s.
+- `PlayHistory.context` is one of `album`, `artist`, `playlist`, `search`, `home`, `favorites` or `other`. History rows are immutable, so `playedAt` replaces `createdAt`/`updatedAt`.
+- The client counts only time actually listened (seeks do not add to it) and reports once per play, retrying once after 5 s on a network or 5xx error.
+- The audio engine calls `POST /tracks/:id/stream` and `POST /me/history` directly through the typed client, not through TanStack Query: they are imperative playback commands with their own token cache, not server state shown by the UI.
+- Stream tokens are renewed when they have less than 60 s left before playing, and once more if the browser reports a source error mid-track (an expired token); a second failure shows "This track could not be played" and pauses.
+- The player persists the queue, play order, current track, shuffle, repeat, volume and mute in `localStorage` (`waven-player`). The playback position is not persisted: after a reload the current track starts paused from 0. A corrupted saved queue is discarded.
+- When the queue ends with repeat off, the player goes back to the first track, paused. "Previous" restarts the current track after 3 s of playback; from the first track it wraps only with repeat all. Repeat one replays the track when it ends, but "Next" still moves on.
+- Shuffle keeps the current track and shuffles the rest after it (Fisher–Yates), so a pass never repeats a track; turning it off returns to the original order at the same track. With repeat all, the shuffled order is kept for the next pass.
+- Reordering the queue with shuffle off moves the tracks themselves (the original order follows the user); with shuffle on it moves the shuffled order.
+- Keyboard shortcuts: Space (play/pause), ←/→ (seek 5 s), Shift+←/→ (previous/next), M (mute), S (shuffle), R (repeat). They are ignored in text fields and with Ctrl/Meta/Alt; Space is left to focused buttons and links, and arrows to focused sliders. Mode changes are announced in a live region. The OS media controls seek 10 s by default.
+- The queue view is a `/queue` page (linked from the player bar and the full-screen player) instead of a side panel; it is reorderable by drag and drop and by keyboard (`@dnd-kit`).
+- OS media controls go through the Media Session API. Windows routes the media keys to a single media session, so another app or tab playing media (YouTube in another browser, Spotify) can take them; this is OS behavior, not a player bug.

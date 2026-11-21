@@ -7,9 +7,11 @@ import { useParams } from 'next/navigation';
 import { DominantHeader, DominantHeaderSkeleton } from '@/components/catalog/dominant-header';
 import { EmptyState, ErrorState, LoadingStatus } from '@/components/catalog/states';
 import { TrackList, TrackListSkeleton, TrackRow } from '@/components/catalog/track-row';
+import { PlayCollectionButton } from '@/components/player/play-collection-button';
 import { useSessionReady } from '@/features/auth/use-session-ready';
 import { albumQuery, isNotFound, isUuid } from '@/lib/api/catalog';
 import { formatTotalDuration, pluralize, releaseYear } from '@/lib/format';
+import { type PlaySource, usePlayerStore } from '@/stores/player.store';
 import { NotFoundState } from './not-found-state';
 
 export function AlbumView() {
@@ -20,6 +22,7 @@ export function AlbumView() {
     ...albumQuery(id),
     enabled: ready && validId,
   });
+  const playQueue = usePlayerStore((state) => state.playQueue);
 
   if (!validId || isNotFound(error)) {
     return <NotFoundState kind="album" />;
@@ -46,6 +49,7 @@ export function AlbumView() {
   }
 
   const year = releaseYear(data.releaseDate);
+  const source: PlaySource = { context: 'album', id: data.id };
 
   return (
     <>
@@ -76,18 +80,22 @@ export function AlbumView() {
         </p>
       </DominantHeader>
 
-      <div className="px-gutter lg:px-gutter-lg pt-6">
+      <div className="px-gutter lg:px-gutter-lg flex flex-col gap-4 pt-6">
         {data.tracks.length > 0 ? (
-          <TrackList label={`${data.title} tracks`}>
-            {data.tracks.map((track) => (
-              <TrackRow
-                key={track.id}
-                track={track}
-                position={track.trackNumber}
-                showArtist={track.artist.id !== data.artist.id}
-              />
-            ))}
-          </TrackList>
+          <>
+            <PlayCollectionButton tracks={data.tracks} source={source} label={data.title} />
+            <TrackList label={`${data.title} tracks`}>
+              {data.tracks.map((track, index) => (
+                <TrackRow
+                  key={track.id}
+                  track={track}
+                  position={track.trackNumber}
+                  showArtist={track.artist.id !== data.artist.id}
+                  onPlay={() => playQueue(data.tracks, index, source)}
+                />
+              ))}
+            </TrackList>
+          </>
         ) : (
           <EmptyState
             icon={ListMusic}

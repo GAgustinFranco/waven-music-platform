@@ -21,6 +21,7 @@ import { StorageModule } from './modules/storage/storage.module.js';
 import { StreamingModule } from './modules/streaming/streaming.module.js';
 import { TestAuthModule } from './modules/auth/test-auth/test-auth.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { HistoryModule } from './modules/history/history.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 
 type AppConfigService = ConfigService<EnvironmentVariables, true>;
@@ -63,6 +64,7 @@ type AppConfigService = ConfigService<EnvironmentVariables, true>;
     StorageModule,
     CatalogModule,
     StreamingModule,
+    HistoryModule,
     // The test login route exists only in e2e runs (see docs/ARCHITECTURE.md §5).
     ConditionalModule.registerWhen(TestAuthModule, (env) => isAuthBypassEnabled(validateEnv(env))),
   ],

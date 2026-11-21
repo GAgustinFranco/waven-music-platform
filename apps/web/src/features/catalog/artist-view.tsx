@@ -8,9 +8,11 @@ import { MediaCard, MediaGrid, MediaGridSkeleton } from '@/components/catalog/me
 import { Section } from '@/components/catalog/section';
 import { EmptyState, ErrorState, LoadingStatus } from '@/components/catalog/states';
 import { TrackList, TrackListSkeleton, TrackRow } from '@/components/catalog/track-row';
+import { PlayCollectionButton } from '@/components/player/play-collection-button';
 import { useSessionReady } from '@/features/auth/use-session-ready';
 import { artistQuery, isNotFound, isUuid } from '@/lib/api/catalog';
 import { pluralize, releaseYear } from '@/lib/format';
+import { type PlaySource, usePlayerStore } from '@/stores/player.store';
 import { NotFoundState } from './not-found-state';
 
 export function ArtistView() {
@@ -21,6 +23,7 @@ export function ArtistView() {
     ...artistQuery(id),
     enabled: ready && validId,
   });
+  const playQueue = usePlayerStore((state) => state.playQueue);
 
   if (!validId || isNotFound(error)) {
     return <NotFoundState kind="artist" />;
@@ -49,6 +52,7 @@ export function ArtistView() {
 
   // Artists have no color of their own: borrow the latest album's.
   const headerColor = data.albums.find((album) => album.dominantColor)?.dominantColor ?? null;
+  const source: PlaySource = { context: 'artist', id: data.id };
 
   return (
     <>
@@ -64,6 +68,10 @@ export function ArtistView() {
       </DominantHeader>
 
       <div className="px-gutter lg:px-gutter-lg flex flex-col gap-10 pt-6">
+        {data.popularTracks.length > 0 ? (
+          <PlayCollectionButton tracks={data.popularTracks} source={source} label={data.name} />
+        ) : null}
+
         <Section id="popular" title="Popular">
           {data.popularTracks.length > 0 ? (
             <TrackList label={`Popular tracks by ${data.name}`}>
@@ -75,6 +83,7 @@ export function ArtistView() {
                   showCover
                   showAlbum
                   showArtist={false}
+                  onPlay={() => playQueue(data.popularTracks, index, source)}
                 />
               ))}
             </TrackList>
