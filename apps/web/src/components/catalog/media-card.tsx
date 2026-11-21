@@ -10,18 +10,31 @@ interface MediaCardProps {
   subtitle?: string;
   image: ImageSet | null;
   shape?: 'square' | 'round';
+  /** Replaces the image, e.g. a playlist mosaic. */
+  cover?: ReactNode;
 }
 
 const CARD_SIZES = '(min-width: 1024px) 200px, 45vw';
 
 /** Album or artist tile. The whole card is one link, named by its title. */
-export function MediaCard({ href, title, subtitle, image, shape = 'square' }: MediaCardProps) {
+export const MEDIA_CARD_SIZES = CARD_SIZES;
+
+export function MediaCard({
+  href,
+  title,
+  subtitle,
+  image,
+  shape = 'square',
+  cover,
+}: MediaCardProps) {
   return (
     <Link
       href={href}
       className="group hover:bg-surface-2 flex flex-col gap-3 rounded-md p-2 transition-colors duration-150 ease-standard sm:p-3"
     >
-      <CoverImage image={image} sizes={CARD_SIZES} shape={shape} className="w-full shadow-md" />
+      {cover ?? (
+        <CoverImage image={image} sizes={CARD_SIZES} shape={shape} className="w-full shadow-md" />
+      )}
       <span className={shape === 'round' ? 'text-center' : undefined}>
         <span className="block truncate text-sm font-medium">{title}</span>
         {subtitle ? (

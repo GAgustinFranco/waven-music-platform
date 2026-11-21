@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, LoadingStatus } from '@/components/catalog/stat
 import { TrackList, TrackListSkeleton, TrackRow } from '@/components/catalog/track-row';
 import { PlayCollectionButton } from '@/components/player/play-collection-button';
 import { useSessionReady } from '@/features/auth/use-session-ready';
+import { useLikedSet } from '@/features/library/use-liked';
 import { albumQuery, isNotFound, isUuid } from '@/lib/api/catalog';
 import { formatTotalDuration, pluralize, releaseYear } from '@/lib/format';
 import { type PlaySource, usePlayerStore } from '@/stores/player.store';
@@ -23,6 +24,7 @@ export function AlbumView() {
     enabled: ready && validId,
   });
   const playQueue = usePlayerStore((state) => state.playQueue);
+  const liked = useLikedSet(data?.tracks.map((track) => track.id) ?? []);
 
   if (!validId || isNotFound(error)) {
     return <NotFoundState kind="album" />;
@@ -92,6 +94,7 @@ export function AlbumView() {
                   position={track.trackNumber}
                   showArtist={track.artist.id !== data.artist.id}
                   onPlay={() => playQueue(data.tracks, index, source)}
+                  liked={liked?.has(track.id)}
                 />
               ))}
             </TrackList>

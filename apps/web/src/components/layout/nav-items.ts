@@ -14,5 +14,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: '/premium', label: 'Premium', icon: Gem },
 ];
 
+/** Playlists and Liked Songs belong to the library. */
+const LIBRARY_PAGES = ['/playlists/', '/favorites'];
+
 export const isActive = (pathname: string, href: NavItem['href']) =>
-  href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+  href === '/'
+    ? pathname === '/'
+    : pathname === href ||
+      pathname.startsWith(`${href}/`) ||
+      (href === '/library' && LIBRARY_PAGES.some((page) => pathname.startsWith(page)));

@@ -404,6 +404,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/playlists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MyPlaylistsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/playlists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlaylistsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/playlists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlaylistsController_get"];
+        put?: never;
+        post?: never;
+        delete: operations["PlaylistsController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["PlaylistsController_update"];
+        trace?: never;
+    };
+    "/playlists/{id}/tracks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlaylistsController_addTracks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/playlists/{id}/tracks/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["PlaylistsController_removeEntry"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/playlists/{id}/tracks/{entryId}/position": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["PlaylistsController_moveEntry"];
+        trace?: never;
+    };
+    "/me/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FavoritesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/favorites/contains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FavoritesController_contains"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/favorites/{trackId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["FavoritesController_add"];
+        post?: never;
+        delete: operations["FavoritesController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -694,6 +838,93 @@ export interface components {
             msPlayed: number;
             context: components["schemas"]["PlayContext"];
         };
+        PlaylistSummaryDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string | null;
+            trackCount: number;
+            /** @description Up to 4 distinct album covers, in playlist order, for a mosaic. */
+            covers: components["schemas"]["ImageSetDto"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        PlaylistPageDto: {
+            items: components["schemas"]["PlaylistSummaryDto"][];
+            total: number;
+            limit: number;
+            offset: number;
+        };
+        CreatePlaylistDto: {
+            /** @description Defaults to "My Playlist #n". */
+            name?: string;
+            description?: string | null;
+        };
+        PlaylistEntryDto: {
+            /**
+             * Format: uuid
+             * @description Entry id; a track may appear more than once.
+             */
+            id: string;
+            /** @description 0-based and contiguous. */
+            position: number;
+            /** Format: date-time */
+            addedAt: string;
+            /** @description `false` when the track was deleted or is not playable. */
+            available: boolean;
+            track: components["schemas"]["TrackDto"];
+        };
+        PlaylistDetailDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string | null;
+            trackCount: number;
+            /** @description Up to 4 distinct album covers, in playlist order, for a mosaic. */
+            covers: components["schemas"]["ImageSetDto"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Sum of the available track durations. */
+            durationMs: number;
+            /** @description Every entry, ordered by position. */
+            entries: components["schemas"]["PlaylistEntryDto"][];
+        };
+        UpdatePlaylistDto: {
+            name?: string;
+            /** @description `null` or an empty string clears it. */
+            description?: string | null;
+        };
+        AddTracksDto: {
+            /** @description Added in this order; repeats are allowed. */
+            trackIds: string[];
+            /** @description Where the first track goes. Defaults to the end; larger values mean the end. */
+            position?: number;
+        };
+        MoveEntryDto: {
+            /** @description Target position, 0-based. Values past the end move the entry to the end. */
+            position: number;
+        };
+        FavoriteDto: {
+            /** Format: date-time */
+            addedAt: string;
+            /** @description `false` when the track was deleted or is not playable. */
+            available: boolean;
+            track: components["schemas"]["TrackDto"];
+        };
+        FavoritePageDto: {
+            items: components["schemas"]["FavoriteDto"][];
+            total: number;
+            limit: number;
+            offset: number;
+        };
+        FavoritesContainsDto: {
+            /** @description The requested ids that are liked. */
+            trackIds: string[];
+        };
     };
     responses: never;
     parameters: never;
@@ -788,8 +1019,8 @@ export interface operations {
     AdminUsersController_list: {
         parameters: {
             query?: {
-                limit?: Record<string, never>;
-                offset?: Record<string, never>;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -923,8 +1154,8 @@ export interface operations {
     ArtistsController_list: {
         parameters: {
             query?: {
-                limit?: Record<string, never>;
-                offset?: Record<string, never>;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -987,8 +1218,8 @@ export interface operations {
     AlbumsController_list: {
         parameters: {
             query?: {
-                limit?: Record<string, never>;
-                offset?: Record<string, never>;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -1113,8 +1344,8 @@ export interface operations {
     AdminArtistsController_list: {
         parameters: {
             query?: {
-                limit?: Record<string, never>;
-                offset?: Record<string, never>;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -1384,8 +1615,8 @@ export interface operations {
     AdminAlbumsController_list: {
         parameters: {
             query?: {
-                limit?: Record<string, never>;
-                offset?: Record<string, never>;
+                limit?: number;
+                offset?: number;
                 artistId?: string;
             };
             header?: never;
@@ -1664,8 +1895,8 @@ export interface operations {
     AdminTracksController_list: {
         parameters: {
             query?: {
-                limit?: Record<string, never>;
-                offset?: Record<string, never>;
+                limit?: number;
+                offset?: number;
                 albumId?: string;
             };
             header?: never;
@@ -2081,6 +2312,461 @@ export interface operations {
             };
             /** @description `PLAY_TOO_SHORT`: under 30 s, or under the whole track if it is shorter. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MyPlaylistsController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Own playlists, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistPageDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PlaylistsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePlaylistDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDetailDto"];
+                };
+            };
+            /** @description Invalid body. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `PLAN_LIMIT_REACHED`: the plan allows no more playlists. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PlaylistsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDetailDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PlaylistsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted with all its entries. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PlaylistsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePlaylistDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDetailDto"];
+                };
+            };
+            /** @description Invalid body. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PlaylistsController_addTracks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTracksDto"];
+            };
+        };
+        responses: {
+            /** @description The playlist after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDetailDto"];
+                };
+            };
+            /** @description Invalid body. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). Or a track that is not playable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `PLAYLIST_FULL`: it would exceed 500 tracks. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PlaylistsController_removeEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                entryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The playlist after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDetailDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). Or an unknown entry (`ENTRY_NOT_FOUND`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PlaylistsController_moveEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                entryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveEntryDto"];
+            };
+        };
+        responses: {
+            /** @description The playlist after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDetailDto"];
+                };
+            };
+            /** @description Invalid body. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown playlist, or one owned by someone else (`PLAYLIST_NOT_FOUND`). Or an unknown entry (`ENTRY_NOT_FOUND`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FavoritesController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liked tracks, most recent first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoritePageDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FavoritesController_contains: {
+        parameters: {
+            query: {
+                /** @description Comma-separated track ids, up to 50. */
+                ids: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoritesContainsDto"];
+                };
+            };
+            /** @description Missing, malformed or too many ids. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FavoritesController_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trackId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liked, or already liked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown, deleted or not yet playable track. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FavoritesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trackId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unliked, or was not liked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

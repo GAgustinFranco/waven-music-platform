@@ -204,7 +204,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - An album's `dominantColor` reaches the CSS only as the `--dominant-color` variable and only if it is a 6-digit hex color. Artists have no color of their own, so their header borrows the first album color the API returns.
 - Catalog pages render on the client under `<Suspense>`: with Cache Components, route params and the pathname are request-time data. A malformed id or a 400/404 from the API shows a "not found" state; other errors show a retry button.
 - Track details (license and attribution link) open in a popover from an info button on every track row.
-- Search, Library and Premium are "Coming soon" pages until phases 6, 5 and 9, so the navigation is complete from the start.
+- Search and Premium are "Coming soon" pages until phases 6 and 9, so the navigation is complete from the start.
 - The web runs unit tests with Vitest (the same version as the API) for pure helpers; component tests are not set up yet.
 - When the session cannot be restored on load because the API is unreachable (network error or 5xx, including the web proxy's error), the web shows "We can't reach Waven right now" with a retry button instead of signing the user out. Only 4xx answers from `/auth/refresh` sign the user out. A failed refresh while already signed in keeps the current state, and each query shows its own error.
 - `POST /me/history` takes a client-generated `playId` (one per play), unique per user, so retries never count a play twice; it answers 204 either way. A play shorter than the threshold gets 422 `PLAY_TOO_SHORT`.
@@ -220,3 +220,18 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - Keyboard shortcuts: Space (play/pause), ←/→ (seek 5 s), Shift+←/→ (previous/next), M (mute), S (shuffle), R (repeat). They are ignored in text fields and with Ctrl/Meta/Alt; Space is left to focused buttons and links, and arrows to focused sliders. Mode changes are announced in a live region. The OS media controls seek 10 s by default.
 - The queue view is a `/queue` page (linked from the player bar and the full-screen player) instead of a side panel; it is reorderable by drag and drop and by keyboard (`@dnd-kit`).
 - OS media controls go through the Media Session API. Windows routes the media keys to a single media session, so another app or tab playing media (YouTube in another browser, Spotify) can take them; this is OS behavior, not a player bug.
+- Playlist positions are 0-based and contiguous. `UNIQUE (playlistId, position)` is `DEFERRABLE INITIALLY DEFERRED`, so a transaction can shift a range of positions. Every track change locks the playlist row (`SELECT … FOR UPDATE`), so concurrent edits from two tabs apply one after another. Positions past the end are clamped to the end.
+- Reorders and removals address entries by `entryId` (a track may repeat), never by track id. They answer with the whole playlist, which the web takes as the new state.
+- `POST /playlists` takes an optional name (default "My Playlist #n", where n is the number of owned playlists + 1) and description. Creations lock the user row, so parallel requests cannot get past the plan limit.
+- A playlist over 500 tracks gets 409 `PLAYLIST_FULL`. Adding a track that is not playable gets 404 `TRACK_NOT_FOUND`, and nothing is added. One request adds up to 100 tracks.
+- Playlist errors use stable codes: `PLAYLIST_NOT_FOUND` (also for someone else's playlist) and `ENTRY_NOT_FOUND`.
+- Playlists have no cover upload in the MVP: the API returns up to 4 distinct album covers in playlist order, and the web shows one cover or a 2×2 mosaic. `coverKey` stays reserved.
+- `GET /me/playlists` lists the newest first. The sidebar and the "Add to playlist" menu show the first 50 (the page size cap).
+- Favorites and playlists keep deleted tracks and return them with `available: false`. The web shows them dimmed and the player skips them. Only playable tracks can be liked; any track can be unliked.
+- `GET /me/favorites/contains?ids=` takes up to 50 comma-separated ids (`ids=a&ids=b` also works). The web asks once per list, in chunks of 50.
+- Hearts, reorders and removals are optimistic (TanStack Query) and roll back on error. A server answer is applied only when no other edit of the same playlist is still in flight. Other tabs refetch through a `BroadcastChannel` (`waven-library`), on top of the refetch on focus.
+- The track context menu is the row's "More options" button, which right-clicking the row also opens. It offers "Add to playlist" (an existing playlist or "New playlist") and, on playlist pages, "Remove from this playlist".
+- Liked Songs lives at `/favorites` and playlists at `/playlists/:id`; both count as Library pages for the navigation. Liked Songs loads 50 tracks at a time with "Show more", and its play button plays the tracks loaded so far.
+- The upgrade prompt (US-16) opens when `POST /playlists` answers `PLAN_LIMIT_REACHED`. It links to `/premium`, a "Coming soon" page until phase 9.
+- The sidebar library hydrates after the session is restored, so it first renders without playlists (as the server did) to avoid a hydration mismatch.
+- `PaginationQueryDto` declares `limit` and `offset` as integers in OpenAPI, so the generated client types them as numbers.

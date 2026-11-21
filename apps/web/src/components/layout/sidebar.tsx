@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import { cn } from 'cn';
+import { SidebarLibrary } from '@/features/library/sidebar-library';
 import { isActive, NAV_ITEMS } from './nav-items';
 
 /**
@@ -13,7 +14,10 @@ import { isActive, NAV_ITEMS } from './nav-items';
  */
 export function Sidebar() {
   return (
-    <aside className="bg-surface hidden flex-col gap-6 p-3 md:flex lg:p-4" aria-label="Sidebar">
+    <aside
+      className="bg-surface hidden min-h-0 flex-col gap-6 p-3 md:flex lg:p-4"
+      aria-label="Sidebar"
+    >
       <Link
         href="/"
         className="flex items-center gap-2 rounded-md px-2 py-1 text-xl font-semibold tracking-tight max-lg:justify-center"
@@ -26,12 +30,19 @@ export function Sidebar() {
       <Suspense fallback={<SidebarNav pathname={null} />}>
         <ActiveSidebarNav />
       </Suspense>
+      <Suspense fallback={<SidebarLibrary pathname={null} />}>
+        <ActiveSidebarLibrary />
+      </Suspense>
     </aside>
   );
 }
 
 function ActiveSidebarNav() {
   return <SidebarNav pathname={usePathname()} />;
+}
+
+function ActiveSidebarLibrary() {
+  return <SidebarLibrary pathname={usePathname()} />;
 }
 
 function SidebarNav({ pathname }: { pathname: string | null }) {

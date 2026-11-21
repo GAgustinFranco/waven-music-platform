@@ -100,3 +100,8 @@ export class Track {
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz' })
   deletedAt: Date | null;
 }
+
+/** Whether a track can be played; deleted or unprocessed ones stay in playlists as unavailable (SPEC §6.7). */
+export function isTrackAvailable(track: Track): boolean {
+  return track.status === TrackStatus.Ready && track.deletedAt === null;
+}
