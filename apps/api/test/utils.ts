@@ -26,7 +26,9 @@ export async function createTestApp(): Promise<TestApp> {
 }
 
 export async function resetDatabase(app: NestExpressApplication): Promise<void> {
-  await app.get(DataSource).query('TRUNCATE TABLE "refresh_tokens", "users" CASCADE');
+  await app
+    .get(DataSource)
+    .query('TRUNCATE TABLE "tracks", "albums", "artists", "refresh_tokens", "users" CASCADE');
 }
 
 /** Reads one cookie value from a response's `Set-Cookie` headers. */

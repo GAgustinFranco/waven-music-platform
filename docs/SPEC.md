@@ -188,3 +188,14 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - The global throttler is skipped when `NODE_ENV=test`, because every e2e request comes from the same IP.
 - The OpenAPI export builds the Nest module graph in preview mode with fixed placeholder env vars, so it needs no database and its output does not depend on the developer's `.env`.
 - The TypeORM CLI only needs `DATABASE_URL`, so migrations do not require the OAuth or JWT secrets. UUIDs use `gen_random_uuid()` (pgcrypto, built into Postgres 13+).
+- Tracks get a fourth status, `pending`, while they have no audio yet (created from the admin panel before the upload). Only `ready` tracks are public.
+- Artists and albums are only listed publicly when they have at least one `ready` track. Slugs are generated once at creation and do not change on rename.
+- Catalog rows carry `source` (`upload`|`jamendo`|`local`) and `sourceId`, unique together, so the seed and `catalog:import` are idempotent.
+- Deleting an artist with albums, or an album with any track (deleted ones included, since playlists still reference them), returns 409. Tracks are only soft-deleted.
+- Uploaded originals are not kept: they are transcoded to 128 and 320 kbps CBR MP3 (stored under a new `audio/<uuid>/` prefix on each upload) and then deleted. Images are stored as WebP at 64, 300 and 640 px under `images/<uuid>/`.
+- Transcoding jobs live in memory, so tracks still `processing` when the API starts are marked `failed` and must be uploaded again.
+- The stream token is self-contained (HMAC-SHA256 over `{ userId, trackId, quality, exp }`), because `/stream` takes no JWT. "Another user's token" therefore means a token whose claims were altered (the signature fails) or one issued for a different track; both return 401.
+- Stream URLs are built from `STREAM_BASE_URL` (the web proxy, `/api`, by default) and image URLs from `MEDIA_PUBLIC_URL`. `/media/*` only serves processed images, never audio.
+- Only single `bytes` ranges are honored; multi-range or malformed `Range` headers get the full file (200), as RFC 9110 allows.
+- "Recently played" on `/browse/home` is an empty list until listening history exists.
+- The Jamendo seed takes the most popular tracks (`order=popularity_total`) in the `mp32` format and stores the license name (for example `CC BY-NC-SA 3.0`) and the Jamendo track page as `attributionUrl`.

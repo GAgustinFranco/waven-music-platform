@@ -19,7 +19,7 @@ test-results/
 !.env.example
 
 # Local media storage
-storage/
+/storage/
 
 # Logs and OS files
 *.log

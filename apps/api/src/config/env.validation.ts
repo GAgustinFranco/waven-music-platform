@@ -7,11 +7,13 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsUrl,
   Max,
   Min,
   MinLength,
+  ValidateIf,
   validateSync,
 } from 'class-validator';
 
@@ -19,6 +21,11 @@ export enum NodeEnv {
   Development = 'development',
   Test = 'test',
   Production = 'production',
+}
+
+export enum StorageDriverKind {
+  Local = 'local',
+  S3 = 's3',
 }
 
 export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
@@ -36,6 +43,10 @@ const toLowerCaseList = (params: { value: unknown }): unknown => {
   const list = splitList(params);
   return Array.isArray(list) ? list.map((item) => String(item).toLowerCase()) : list;
 };
+
+/** Lets optional variables be left blank in .env files. */
+const emptyToUndefined = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' && value.trim() === '' ? undefined : value;
 
 const toBoolean = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim().toLowerCase() === 'true' : value;
@@ -104,6 +115,74 @@ export class EnvironmentVariables {
   @Transform(toBoolean)
   @IsBoolean()
   E2E_AUTH_BYPASS = false;
+
+  /** `local` writes to disk (dev); `s3` targets any S3-compatible bucket such as R2 (prod). */
+  @IsEnum(StorageDriverKind)
+  STORAGE_DRIVER: StorageDriverKind = StorageDriverKind.Local;
+
+  /** Root folder of the local driver, relative to the API's working directory. */
+  @IsString()
+  @IsNotEmpty()
+  STORAGE_LOCAL_DIR = '../../storage';
+
+  @ValidateIf((env: EnvironmentVariables) => env.STORAGE_DRIVER === StorageDriverKind.S3)
+  @IsString()
+  @IsNotEmpty()
+  S3_BUCKET?: string;
+
+  /** Custom endpoint for S3-compatible providers (R2: `https://<account>.r2.cloudflarestorage.com`). */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsUrl({ require_tld: false, require_protocol: true })
+  S3_ENDPOINT?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  S3_REGION = 'auto';
+
+  @ValidateIf((env: EnvironmentVariables) => env.STORAGE_DRIVER === StorageDriverKind.S3)
+  @IsString()
+  @IsNotEmpty()
+  S3_ACCESS_KEY_ID?: string;
+
+  @ValidateIf((env: EnvironmentVariables) => env.STORAGE_DRIVER === StorageDriverKind.S3)
+  @IsString()
+  @IsNotEmpty()
+  S3_SECRET_ACCESS_KEY?: string;
+
+  /** Public base URL of images (`/media/*` through the web proxy in dev, a public bucket in prod). */
+  @IsUrl({ require_tld: false, require_protocol: true })
+  MEDIA_PUBLIC_URL = 'http://localhost:3000/api/media';
+
+  /** Base URL the browser uses to reach `GET /stream/:id` (through the web proxy by default). */
+  @IsUrl({ require_tld: false, require_protocol: true })
+  STREAM_BASE_URL = 'http://localhost:3000/api';
+
+  /** HMAC key of the signed stream URLs. */
+  @IsString()
+  @MinLength(32)
+  STREAM_TOKEN_SECRET: string;
+
+  /** Stream token lifetime in seconds. */
+  @Type(() => Number)
+  @IsInt()
+  @Min(60)
+  @Max(86_400)
+  STREAM_TOKEN_TTL = 3600;
+
+  /** Transcoding jobs that run at the same time. */
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(8)
+  MEDIA_CONCURRENCY = 2;
+
+  /** Overrides the ffmpeg binary bundled by `ffmpeg-static`. */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  FFMPEG_PATH?: string;
 }
 
 /**
