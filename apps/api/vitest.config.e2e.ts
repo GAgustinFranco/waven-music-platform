@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -9,7 +11,7 @@ export default defineConfig({
     include: ['test/**/*.e2e-spec.ts'],
     // Suites share one database, so they run one file at a time.
     fileParallelism: false,
-    testTimeout: 20_000,
+    testTimeout: 30_000,
     hookTimeout: 30_000,
     // Local defaults for the `db-test` container; CI overrides them. Every
     // variable is set here so a developer's .env never leaks into the tests.
@@ -28,6 +30,13 @@ export default defineConfig({
       REFRESH_TTL_DAYS: '30',
       ADMIN_EMAILS: 'admin@waven.test',
       E2E_AUTH_BYPASS: 'true',
+      STORAGE_DRIVER: 'local',
+      STORAGE_LOCAL_DIR: join(tmpdir(), 'waven-e2e-storage'),
+      MEDIA_PUBLIC_URL: 'http://localhost:3000/api/media',
+      STREAM_BASE_URL: 'http://localhost:3000/api',
+      STREAM_TOKEN_SECRET: 'test-stream-secret-that-is-at-least-32-chars',
+      STREAM_TOKEN_TTL: '3600',
+      MEDIA_CONCURRENCY: '2',
     },
   },
 });

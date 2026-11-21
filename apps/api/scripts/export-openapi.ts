@@ -19,6 +19,8 @@ const FIXED_ENV: Record<string, string> = {
   GOOGLE_CLIENT_SECRET: 'openapi',
   JWT_ACCESS_SECRET: 'openapi-export-placeholder-secret-0000',
   E2E_AUTH_BYPASS: 'false',
+  STORAGE_DRIVER: 'local',
+  STREAM_TOKEN_SECRET: 'openapi-export-placeholder-secret-0000',
 };
 Object.assign(process.env, FIXED_ENV);
 

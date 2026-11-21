@@ -8,5 +8,6 @@ catalog:
 # Dependencies allowed to run install scripts (false = blocked).
 allowBuilds:
   '@scarf/scarf': false
+  ffmpeg-static: true
   sharp: false
   unrs-resolver: false

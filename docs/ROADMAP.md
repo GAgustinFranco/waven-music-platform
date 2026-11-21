@@ -45,10 +45,10 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Public catalog endpoints and `/browse/home`; `POST /tracks/:id/stream` and `GET /stream/:id` with Range.
 
 **Acceptance criteria**
-- [ ] `pnpm seed` leaves ≥ 300 `ready` tracks in two qualities.
-- [ ] Range e2e tests: 206 with a correct `Content-Range`, 416 out of range, 401 with an expired token or another user's token.
-- [ ] A Free user gets std quality (test).
-- [ ] An admin upload with an invalid type is rejected.
+- [x] `pnpm seed` leaves ≥ 300 `ready` tracks in two qualities.
+- [x] Range e2e tests: 206 with a correct `Content-Range`, 416 out of range, 401 with an expired token or another user's token.
+- [x] A Free user gets std quality (test).
+- [x] An admin upload with an invalid type is rejected.
 
 ### Phase 3 — Frontend shell, design system and catalog pages
 - Tokens, typography, responsive layout (sidebar, content, room for the player bar and bottom navigation on mobile) and skeletons.

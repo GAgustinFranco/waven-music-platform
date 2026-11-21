@@ -18,6 +18,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "openapi": "pnpm -F api openapi:export && pnpm -F web openapi:types",
+    "seed": "pnpm -F api seed",
     "prepare": "husky"
   },
   "devDependencies": {

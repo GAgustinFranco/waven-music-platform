@@ -5,6 +5,7 @@ const REQUIRED = {
   GOOGLE_CLIENT_ID: 'client-id',
   GOOGLE_CLIENT_SECRET: 'client-secret',
   JWT_ACCESS_SECRET: 'a'.repeat(32),
+  STREAM_TOKEN_SECRET: 'b'.repeat(32),
 };
 
 describe('validateEnv', () => {
@@ -19,6 +20,20 @@ describe('validateEnv', () => {
     expect(env.REFRESH_TTL_DAYS).toBe(30);
     expect(env.ADMIN_EMAILS).toEqual([]);
     expect(env.E2E_AUTH_BYPASS).toBe(false);
+    expect(env.STORAGE_DRIVER).toBe('local');
+    expect(env.STREAM_TOKEN_TTL).toBe(3600);
+  });
+
+  it('requires the bucket credentials only with the s3 driver', () => {
+    expect(() => validateEnv({ ...REQUIRED, STORAGE_DRIVER: 's3' })).toThrow(/S3_BUCKET/);
+    const env = validateEnv({
+      ...REQUIRED,
+      STORAGE_DRIVER: 's3',
+      S3_BUCKET: 'waven',
+      S3_ACCESS_KEY_ID: 'key',
+      S3_SECRET_ACCESS_KEY: 'secret',
+    });
+    expect(env.S3_BUCKET).toBe('waven');
   });
 
   it('parses numbers, booleans and comma-separated lists', () => {
@@ -51,6 +66,9 @@ describe('validateEnv', () => {
     ['CORS_ORIGINS', 'not a url'],
     ['JWT_ACCESS_SECRET', 'too-short'],
     ['ADMIN_EMAILS', 'not-an-email'],
+    ['STORAGE_DRIVER', 'ftp'],
+    ['STREAM_TOKEN_SECRET', 'too-short'],
+    ['MEDIA_CONCURRENCY', '0'],
   ])('fails when %s is invalid (%s)', (key, value) => {
     expect(() => validateEnv({ ...REQUIRED, [key]: value })).toThrow(new RegExp(key));
   });
