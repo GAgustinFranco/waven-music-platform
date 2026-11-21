@@ -9,7 +9,8 @@ import {
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { type FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { containsPattern } from '../../common/dto/pagination.dto.js';
 import { detectAudioType, detectImageType, readHeader } from '../media/file-type.js';
 import { MediaService } from '../media/media.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../storage/storage.types.js';
@@ -59,8 +60,9 @@ export class AdminCatalogService {
 
   // ---------- Artists ----------
 
-  async listArtists(limit: number, offset: number): Promise<Page<Artist>> {
+  async listArtists(limit: number, offset: number, q?: string): Promise<Page<Artist>> {
     const [items, total] = await this.artists.findAndCount({
+      where: q ? { name: ILike(containsPattern(q)) } : {},
       order: { createdAt: 'DESC', id: 'ASC' },
       take: limit,
       skip: offset,
@@ -131,9 +133,16 @@ export class AdminCatalogService {
 
   // ---------- Albums ----------
 
-  async listAlbums(limit: number, offset: number, artistId?: string): Promise<Page<Album>> {
+  async listAlbums(
+    limit: number,
+    offset: number,
+    filter: { artistId?: string; q?: string } = {},
+  ): Promise<Page<Album>> {
+    const where: FindOptionsWhere<Album> = {};
+    if (filter.artistId) where.artistId = filter.artistId;
+    if (filter.q) where.title = ILike(containsPattern(filter.q));
     const [items, total] = await this.albums.findAndCount({
-      where: artistId ? { artistId } : {},
+      where,
       relations: { artist: true },
       order: { createdAt: 'DESC', id: 'ASC' },
       take: limit,
@@ -215,11 +224,18 @@ export class AdminCatalogService {
 
   // ---------- Tracks ----------
 
-  async listTracks(limit: number, offset: number, albumId?: string): Promise<Page<Track>> {
+  async listTracks(
+    limit: number,
+    offset: number,
+    filter: { albumId?: string; q?: string } = {},
+  ): Promise<Page<Track>> {
+    const where: FindOptionsWhere<Track> = {};
+    if (filter.albumId) where.albumId = filter.albumId;
+    if (filter.q) where.title = ILike(containsPattern(filter.q));
     const [items, total] = await this.tracks.findAndCount({
-      where: albumId ? { albumId } : {},
+      where,
       relations: { album: true, artist: true },
-      order: albumId ? { trackNumber: 'ASC', id: 'ASC' } : { createdAt: 'DESC', id: 'ASC' },
+      order: filter.albumId ? { trackNumber: 'ASC', id: 'ASC' } : { createdAt: 'DESC', id: 'ASC' },
       take: limit,
       skip: offset,
     });

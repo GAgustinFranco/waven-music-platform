@@ -1,6 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { SearchPageQueryDto } from '../../../common/dto/pagination.dto.js';
 import { PLAN_LIMITS, Plan, StreamQuality, getEffectivePlan } from '../plan.js';
 import { Role, type User } from '../user.entity.js';
 
@@ -78,4 +79,17 @@ export class UserPageDto {
 
   @ApiProperty()
   offset: number;
+}
+
+export class AdminUserQueryDto extends SearchPageQueryDto {
+  @ApiPropertyOptional({ enum: Role, enumName: 'Role' })
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
+}
+
+export class UpdateUserRoleDto {
+  @ApiProperty({ enum: Role, enumName: 'Role' })
+  @IsEnum(Role)
+  role: Role;
 }

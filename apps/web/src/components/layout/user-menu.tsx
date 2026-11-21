@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { LogOut, UserRound } from 'lucide-react';
+import { LogOut, ShieldCheck, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -70,6 +70,14 @@ export function UserMenu() {
             Profile and plan
           </Link>
         </DropdownMenuItem>
+        {me.role === 'admin' ? (
+          <DropdownMenuItem asChild>
+            <Link href="/admin">
+              <ShieldCheck aria-hidden="true" />
+              Admin panel
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem disabled={signingOut} onSelect={() => void signOut()}>
           <LogOut aria-hidden="true" />
           Sign out
