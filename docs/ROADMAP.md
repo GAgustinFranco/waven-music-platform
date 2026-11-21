@@ -103,8 +103,8 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Web: protected `/admin` routes; tables with search and pagination; artist, album and track forms with file upload, a progress bar and transcoding status; dashboard with simple charts.
 
 **Acceptance criteria**
-- [ ] An admin creates an album with a cover and 2 tracks, and they are playable without restarting the API.
-- [ ] A user cannot access `/admin` (neither on the web nor on the API).
+- [x] An admin creates an album with a cover and 2 tracks, and they are playable without restarting the API.
+- [x] A user cannot access `/admin` (neither on the web nor on the API).
 
 ### Phase 9 — Billing with Mercado Pago (sandbox)
 - Prerequisites: Mercado Pago account, test users (seller and buyer), webhook secret and a `cloudflared` tunnel.

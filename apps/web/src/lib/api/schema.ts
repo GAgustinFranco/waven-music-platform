@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdminUsersController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AdminUsersController_changeRole"];
+        trace?: never;
+    };
     "/auth/google": {
         parameters: {
             query?: never;
@@ -564,6 +580,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdminSubscriptionsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdminStatsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -619,6 +667,9 @@ export interface components {
             total: number;
             limit: number;
             offset: number;
+        };
+        UpdateUserRoleDto: {
+            role: components["schemas"]["Role"];
         };
         AccessTokenDto: {
             /** @description Short-lived JWT. Keep it in memory only. */
@@ -985,6 +1036,80 @@ export interface components {
             /** @description The best hit across types; only with `type=all`. */
             topResult: components["schemas"]["TopResultDto"] | null;
         };
+        /** @enum {string} */
+        SubscriptionStatus: "pending" | "authorized" | "paused" | "cancelled";
+        SubscriptionUserDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+            displayName: string;
+        };
+        /** @enum {string} */
+        PaymentMode: "preapproval" | "onetime";
+        AdminSubscriptionDto: {
+            /** Format: uuid */
+            id: string;
+            user: components["schemas"]["SubscriptionUserDto"];
+            provider: string;
+            mode: components["schemas"]["PaymentMode"];
+            status: components["schemas"]["SubscriptionStatus"];
+            /** @description In major units (for example, 2999.00 ARS). */
+            amount: number;
+            /** @example ARS */
+            currency: string;
+            /** Format: date-time */
+            currentPeriodEnd: string | null;
+            /** Format: date-time */
+            cancelledAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminSubscriptionPageDto: {
+            items: components["schemas"]["AdminSubscriptionDto"][];
+            total: number;
+            limit: number;
+            offset: number;
+        };
+        UserStatsDto: {
+            total: number;
+            admins: number;
+            /** @description Users with an effective Premium plan (business rule 1). */
+            premium: number;
+            /** @description Signed up in the last 7 days. */
+            newLast7Days: number;
+        };
+        TrackStatsDto: {
+            /** @description Tracks that are not deleted, in any status. */
+            total: number;
+            pending: number;
+            processing: number;
+            ready: number;
+            failed: number;
+        };
+        DailyPlaysDto: {
+            /**
+             * Format: date
+             * @description UTC day.
+             */
+            date: string;
+            plays: number;
+        };
+        TopTrackDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            artist: components["schemas"]["ArtistRefDto"];
+            playCount: number;
+        };
+        AdminStatsDto: {
+            users: components["schemas"]["UserStatsDto"];
+            tracks: components["schemas"]["TrackStatsDto"];
+            /** @description One entry per day, oldest first, zeros included. */
+            playsPerDay: components["schemas"]["DailyPlaysDto"][];
+            /** @description Up to 5, by all-time play count. */
+            topTracks: components["schemas"]["TopTrackDto"][];
+        };
     };
     responses: never;
     parameters: never;
@@ -1081,6 +1206,9 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description Case-insensitive substring match. */
+                q?: string;
+                role?: components["schemas"]["Role"];
             };
             header?: never;
             path?: never;
@@ -1105,6 +1233,100 @@ export interface operations {
             };
             /** @description The user is not an admin. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminUsersController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The user is not an admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminUsersController_changeRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserRoleDto"];
+            };
+        };
+        responses: {
+            /** @description The new role reaches the access token of that user at its next refresh. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The user is not an admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `CANNOT_DEMOTE_SELF` */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1407,6 +1629,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description Case-insensitive substring match. */
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -1678,6 +1902,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description Case-insensitive substring match. */
+                q?: string;
                 artistId?: string;
             };
             header?: never;
@@ -1958,6 +2184,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description Case-insensitive substring match. */
+                q?: string;
                 albumId?: string;
             };
             header?: never;
@@ -2906,6 +3134,80 @@ export interface operations {
             };
             /** @description Missing or invalid access token. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminSubscriptionsController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                /** @description Case-insensitive substring match. */
+                q?: string;
+                status?: components["schemas"]["SubscriptionStatus"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSubscriptionPageDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The user is not an admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminStatsController_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStatsDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The user is not an admin. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

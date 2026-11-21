@@ -115,6 +115,24 @@
               "default": 0,
               "type": "integer"
             }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring match.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Role"
+            }
           }
         ],
         "responses": {
@@ -133,6 +151,105 @@
           },
           "403": {
             "description": "The user is not an admin."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/users/{id}": {
+      "get": {
+        "operationId": "AdminUsersController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "403": {
+            "description": "The user is not an admin."
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminUsersController_changeRole",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The new role reaches the access token of that user at its next refresh.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "403": {
+            "description": "The user is not an admin."
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": "`CANNOT_DEMOTE_SELF`"
           }
         },
         "security": [
@@ -523,6 +640,16 @@
               "default": 0,
               "type": "integer"
             }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring match.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -813,6 +940,16 @@
               "minimum": 0,
               "default": 0,
               "type": "integer"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring match.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
             }
           },
           {
@@ -1116,6 +1253,16 @@
               "minimum": 0,
               "default": 0,
               "type": "integer"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring match.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
             }
           },
           {
@@ -2188,6 +2335,122 @@
           "search"
         ]
       }
+    },
+    "/admin/subscriptions": {
+      "get": {
+        "operationId": "AdminSubscriptionsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring match.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SubscriptionStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSubscriptionPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "403": {
+            "description": "The user is not an admin."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/stats": {
+      "get": {
+        "operationId": "AdminStatsController_get",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 90,
+              "default": 14,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "403": {
+            "description": "The user is not an admin."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {
@@ -2404,6 +2667,21 @@
           "total",
           "limit",
           "offset"
+        ]
+      },
+      "UpdateUserRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Role"
+              }
+            ]
+          }
+        },
+        "required": [
+          "role"
         ]
       },
       "AccessTokenDto": {
@@ -3711,6 +3989,257 @@
           "albums",
           "artists",
           "topResult"
+        ]
+      },
+      "SubscriptionStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "authorized",
+          "paused",
+          "cancelled"
+        ]
+      },
+      "SubscriptionUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName"
+        ]
+      },
+      "PaymentMode": {
+        "type": "string",
+        "enum": [
+          "preapproval",
+          "onetime"
+        ]
+      },
+      "AdminSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SubscriptionUserDto"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "mode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMode"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionStatus"
+              }
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "description": "In major units (for example, 2999.00 ARS)."
+          },
+          "currency": {
+            "type": "string",
+            "example": "ARS"
+          },
+          "currentPeriodEnd": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "user",
+          "provider",
+          "mode",
+          "status",
+          "amount",
+          "currency",
+          "currentPeriodEnd",
+          "cancelledAt",
+          "createdAt"
+        ]
+      },
+      "AdminSubscriptionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminSubscriptionDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ]
+      },
+      "UserStatsDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "admins": {
+            "type": "number"
+          },
+          "premium": {
+            "type": "number",
+            "description": "Users with an effective Premium plan (business rule 1)."
+          },
+          "newLast7Days": {
+            "type": "number",
+            "description": "Signed up in the last 7 days."
+          }
+        },
+        "required": [
+          "total",
+          "admins",
+          "premium",
+          "newLast7Days"
+        ]
+      },
+      "TrackStatsDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "Tracks that are not deleted, in any status."
+          },
+          "pending": {
+            "type": "number"
+          },
+          "processing": {
+            "type": "number"
+          },
+          "ready": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "pending",
+          "processing",
+          "ready",
+          "failed"
+        ]
+      },
+      "DailyPlaysDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "UTC day."
+          },
+          "plays": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "plays"
+        ]
+      },
+      "TopTrackDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artist": {
+            "$ref": "#/components/schemas/ArtistRefDto"
+          },
+          "playCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "artist",
+          "playCount"
+        ]
+      },
+      "AdminStatsDto": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "$ref": "#/components/schemas/UserStatsDto"
+          },
+          "tracks": {
+            "$ref": "#/components/schemas/TrackStatsDto"
+          },
+          "playsPerDay": {
+            "description": "One entry per day, oldest first, zeros included.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyPlaysDto"
+            }
+          },
+          "topTracks": {
+            "description": "Up to 5, by all-time play count.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopTrackDto"
+            }
+          }
+        },
+        "required": [
+          "users",
+          "tracks",
+          "playsPerDay",
+          "topTracks"
         ]
       }
     }

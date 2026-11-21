@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
+import { containsPattern } from '../../common/dto/pagination.dto.js';
 import { Role, User } from './user.entity.js';
 
 export interface ExternalProfile {
@@ -67,12 +68,48 @@ export class UsersService {
     return this.users.save(user);
   }
 
-  async list(limit: number, offset: number): Promise<{ items: User[]; total: number }> {
-    const [items, total] = await this.users.findAndCount({
-      order: { createdAt: 'DESC', id: 'ASC' },
-      take: limit,
-      skip: offset,
-    });
+  /** Newest first; `q` matches the email or the display name. */
+  async list(
+    limit: number,
+    offset: number,
+    filter: { q?: string; role?: Role } = {},
+  ): Promise<{ items: User[]; total: number }> {
+    const query = this.users
+      .createQueryBuilder('user')
+      .orderBy('user.createdAt', 'DESC')
+      .addOrderBy('user.id', 'ASC')
+      .take(limit)
+      .skip(offset);
+    if (filter.q) {
+      const pattern = containsPattern(filter.q);
+      query.andWhere(
+        new Brackets((where) =>
+          where
+            .where('user.email ILIKE :pattern', { pattern })
+            .orWhere('user.displayName ILIKE :pattern', { pattern }),
+        ),
+      );
+    }
+    if (filter.role) {
+      query.andWhere('user.role = :role', { role: filter.role });
+    }
+    const [items, total] = await query.getManyAndCount();
     return { items, total };
+  }
+
+  /** Business rule 10: an admin cannot remove their own admin role. */
+  async changeRole(actorId: string, targetId: string, role: Role): Promise<User> {
+    const user = await this.findById(targetId);
+    if (user.role === role) {
+      return user;
+    }
+    if (user.id === actorId && role !== Role.Admin) {
+      throw new ConflictException({
+        code: 'CANNOT_DEMOTE_SELF',
+        message: 'You cannot remove your own admin role',
+      });
+    }
+    user.role = role;
+    return this.users.save(user);
   }
 }

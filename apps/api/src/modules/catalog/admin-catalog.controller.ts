@@ -32,7 +32,7 @@ import {
   ApiUnauthorizedResponse,
   ApiUnsupportedMediaTypeResponse,
 } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../common/dto/pagination.dto.js';
+import { SearchPageQueryDto } from '../../common/dto/pagination.dto.js';
 import { Roles } from '../auth/decorators/auth.decorators.js';
 import { Role } from '../users/user.entity.js';
 import {
@@ -85,9 +85,14 @@ export class AdminArtistsController {
 
   @Get()
   @ApiOkResponse({ type: AdminArtistPageDto })
-  async list(@Query() query: PaginationQueryDto): Promise<AdminArtistPageDto> {
-    const { items, total } = await this.catalog.listArtists(query.limit, query.offset);
-    return { items: items.map((artist) => this.mapper.adminArtist(artist)), total, ...query };
+  async list(@Query() query: SearchPageQueryDto): Promise<AdminArtistPageDto> {
+    const { items, total } = await this.catalog.listArtists(query.limit, query.offset, query.q);
+    return {
+      items: items.map((artist) => this.mapper.adminArtist(artist)),
+      total,
+      limit: query.limit,
+      offset: query.offset,
+    };
   }
 
   @Post()
@@ -150,11 +155,10 @@ export class AdminAlbumsController {
   @Get()
   @ApiOkResponse({ type: AdminAlbumPageDto })
   async list(@Query() query: AdminAlbumQueryDto): Promise<AdminAlbumPageDto> {
-    const { items, total } = await this.catalog.listAlbums(
-      query.limit,
-      query.offset,
-      query.artistId,
-    );
+    const { items, total } = await this.catalog.listAlbums(query.limit, query.offset, {
+      artistId: query.artistId,
+      q: query.q,
+    });
     return {
       items: items.map((album) => this.mapper.adminAlbum(album)),
       total,
@@ -224,11 +228,10 @@ export class AdminTracksController {
   @Get()
   @ApiOkResponse({ type: AdminTrackPageDto, description: 'Every status; deleted tracks excluded.' })
   async list(@Query() query: AdminTrackQueryDto): Promise<AdminTrackPageDto> {
-    const { items, total } = await this.catalog.listTracks(
-      query.limit,
-      query.offset,
-      query.albumId,
-    );
+    const { items, total } = await this.catalog.listTracks(query.limit, query.offset, {
+      albumId: query.albumId,
+      q: query.q,
+    });
     return {
       items: items.map((track) => this.mapper.adminTrack(track)),
       total,

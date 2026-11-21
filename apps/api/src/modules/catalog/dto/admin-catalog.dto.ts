@@ -12,7 +12,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { PaginationQueryDto } from '../../../common/dto/pagination.dto.js';
+import { SearchPageQueryDto } from '../../../common/dto/pagination.dto.js';
 import { CatalogSource } from '../entities/catalog-source.js';
 import { TrackStatus } from '../entities/track.entity.js';
 import { AlbumRefDto, AlbumSummaryDto, ArtistRefDto, ArtistSummaryDto } from './catalog.dto.js';
@@ -93,14 +93,14 @@ export class CreateTrackDto {
 
 export class UpdateTrackDto extends PartialType(OmitType(CreateTrackDto, ['albumId'] as const)) {}
 
-export class AdminAlbumQueryDto extends PaginationQueryDto {
+export class AdminAlbumQueryDto extends SearchPageQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
   artistId?: string;
 }
 
-export class AdminTrackQueryDto extends PaginationQueryDto {
+export class AdminTrackQueryDto extends SearchPageQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
