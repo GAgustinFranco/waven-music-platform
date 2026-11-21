@@ -1,13 +1,15 @@
 'use client';
 
-import { ExternalLink, Info } from 'lucide-react';
+import { AudioLines, ExternalLink, Info, Pause, Play } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { cn } from 'cn';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Track } from '@/lib/api/catalog';
 import { describeDuration, formatDuration } from '@/lib/format';
+import { selectCurrentTrack, usePlayerStore } from '@/stores/player.store';
 import { CoverImage } from './cover-image';
 
 interface TrackRowProps {
@@ -20,6 +22,8 @@ interface TrackRowProps {
   showAlbum?: boolean;
   /** Hidden on album pages, where every track shares the artist in the header. */
   showArtist?: boolean;
+  /** Plays this list from this track; without it the row has no play button. */
+  onPlay?: () => void;
 }
 
 const GRID = 'grid grid-cols-[--spacing(8)_minmax(0,1fr)_auto_auto] items-center gap-3 lg:gap-4';
@@ -31,21 +35,45 @@ export function TrackRow({
   showCover = false,
   showAlbum = false,
   showArtist = true,
+  onPlay,
 }: TrackRowProps) {
+  const isCurrent = usePlayerStore((state) => selectCurrentTrack(state)?.id === track.id);
+  const isPlaying = usePlayerStore((state) => state.isPlaying) && isCurrent;
+
   return (
     <li
-      className={`${GRID} ${showAlbum ? GRID_WITH_ALBUM : ''} hover:bg-surface-2 ease-standard relative rounded-sm px-2 py-2 transition-colors duration-150 sm:px-4`}
+      aria-current={isCurrent ? 'true' : undefined}
+      className={`group/row ${GRID} ${showAlbum ? GRID_WITH_ALBUM : ''} hover:bg-surface-2 ease-standard relative rounded-sm px-2 py-2 transition-colors duration-150 sm:px-4`}
     >
-      <span className="text-muted-foreground text-right font-mono text-sm tabular-nums">
-        {position}
-      </span>
+      <div className="relative flex h-8 items-center justify-end">
+        <span
+          className={cn(
+            'font-mono text-sm tabular-nums',
+            isCurrent ? 'text-brand' : 'text-muted-foreground',
+            onPlay &&
+              'group-hover/row:invisible group-has-[[data-play]:focus-visible]/row:invisible [@media(hover:none)]:invisible',
+          )}
+        >
+          {isPlaying ? <AudioLines role="img" aria-label="Playing" className="size-4" /> : position}
+        </span>
+        {onPlay ? (
+          <TrackPlayButton
+            title={track.title}
+            isCurrent={isCurrent}
+            isPlaying={isPlaying}
+            onPlay={onPlay}
+          />
+        ) : null}
+      </div>
 
       <div className="flex min-w-0 items-center gap-3">
         {showCover ? (
           <CoverImage image={track.album.cover} sizes="40px" className="size-10 shrink-0" />
         ) : null}
         <div className="min-w-0">
-          <p className="truncate text-base font-medium">{track.title}</p>
+          <p className={cn('truncate text-base font-medium', isCurrent && 'text-brand')}>
+            {track.title}
+          </p>
           {showArtist ? (
             <Link
               href={`/artists/${track.artist.id}`}
@@ -73,6 +101,34 @@ export function TrackRow({
         <span className="sr-only">{describeDuration(track.durationMs)}</span>
       </span>
     </li>
+  );
+}
+
+function TrackPlayButton({
+  title,
+  isCurrent,
+  isPlaying,
+  onPlay,
+}: {
+  title: string;
+  isCurrent: boolean;
+  isPlaying: boolean;
+  onPlay: () => void;
+}) {
+  const togglePlay = usePlayerStore((state) => state.togglePlay);
+  const Icon = isPlaying ? Pause : Play;
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      data-play=""
+      aria-label={`${isPlaying ? 'Pause' : 'Play'} ${title}`}
+      onClick={isCurrent ? togglePlay : onPlay}
+      className="absolute inset-y-0 right-0 my-auto opacity-0 group-hover/row:opacity-100 hover:bg-transparent focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+    >
+      <Icon aria-hidden="true" className="size-4 fill-current" />
+    </Button>
   );
 }
 

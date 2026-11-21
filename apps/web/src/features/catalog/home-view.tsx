@@ -9,6 +9,9 @@ import { TrackList, TrackListSkeleton, TrackRow } from '@/components/catalog/tra
 import { useSessionReady } from '@/features/auth/use-session-ready';
 import { homeQuery } from '@/lib/api/catalog';
 import { releaseYear } from '@/lib/format';
+import { type PlaySource, usePlayerStore } from '@/stores/player.store';
+
+const HOME: PlaySource = { context: 'home', id: null };
 
 export function HomeView() {
   const ready = useSessionReady();
@@ -16,6 +19,7 @@ export function HomeView() {
     ...homeQuery(),
     enabled: ready,
   });
+  const playQueue = usePlayerStore((state) => state.playQueue);
 
   return (
     <div className="px-gutter lg:px-gutter-lg flex flex-col gap-10 pt-20">
@@ -65,7 +69,14 @@ export function HomeView() {
             {data.popularTracks.length > 0 ? (
               <TrackList label="Popular tracks">
                 {data.popularTracks.map((track, index) => (
-                  <TrackRow key={track.id} track={track} position={index + 1} showCover showAlbum />
+                  <TrackRow
+                    key={track.id}
+                    track={track}
+                    position={index + 1}
+                    showCover
+                    showAlbum
+                    onPlay={() => playQueue(data.popularTracks, index, HOME)}
+                  />
                 ))}
               </TrackList>
             ) : (
@@ -82,7 +93,14 @@ export function HomeView() {
             {data.recentlyPlayed.length > 0 ? (
               <TrackList label="Recently played">
                 {data.recentlyPlayed.map((track, index) => (
-                  <TrackRow key={track.id} track={track} position={index + 1} showCover showAlbum />
+                  <TrackRow
+                    key={track.id}
+                    track={track}
+                    position={index + 1}
+                    showCover
+                    showAlbum
+                    onPlay={() => playQueue(data.recentlyPlayed, index, HOME)}
+                  />
                 ))}
               </TrackList>
             ) : (

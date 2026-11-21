@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 import { cn } from 'cn';
 import { isActive, NAV_ITEMS } from './nav-items';
 
-/** Mobile (< 768 px) 4-item navigation. The mini player (Phase 4) sits above it. */
+/** Mobile (< 768 px) 4-item navigation. The mini player sits above it. */
 export function BottomNav() {
   return (
     <Suspense fallback={<BottomNavLinks pathname={null} />}>

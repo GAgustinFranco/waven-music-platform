@@ -67,10 +67,10 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - History report at 30 s (the minimal endpoint is created in this phase).
 
 **Acceptance criteria**
-- [ ] Playing an album, skipping tracks, seeking and shuffle all work.
-- [ ] The queue and volume are restored on reload.
-- [ ] The operating system's media controls work.
-- [ ] Store unit tests: queue order, shuffle without repeats and repeat modes.
+- [x] Playing an album, skipping tracks, seeking and shuffle all work.
+- [x] The queue and volume are restored on reload.
+- [x] The operating system's media controls work.
+- [x] Store unit tests: queue order, shuffle without repeats and repeat modes.
 
 ### Phase 5 — Playlists and favorites
 - Backend: CRUD, add, remove and reorder in a transaction, plan limit (`PLAN_LIMIT_REACHED`) and favorites.
