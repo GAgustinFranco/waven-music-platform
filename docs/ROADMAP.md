@@ -86,10 +86,10 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Web: search as you type (debounced, synced with the URL), results with a "top result", history page and "recently played" on Home.
 
 **Acceptance criteria**
-- [ ] "cafe" finds "Café".
-- [ ] A simple typo finds the result.
-- [ ] p95 < 100 ms with the seeded catalog.
-- [ ] History is paginated and has no duplicates of the same play.
+- [x] "cafe" finds "Café".
+- [x] A simple typo finds the result.
+- [x] p95 < 100 ms with the seeded catalog.
+- [x] History is paginated and has no duplicates of the same play.
 
 ### Phase 7 — Profile and UX polish
 - Profile and plan page, toasts, `motion` transitions, illustrated empty states, prefetch on hover and a contrast review.

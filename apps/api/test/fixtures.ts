@@ -8,6 +8,10 @@ import { bundledFfmpegPath as ffmpegPath } from '../src/modules/media/ffmpeg-pat
 import sharp from 'sharp';
 import request from 'supertest';
 import { type App } from 'supertest/types.js';
+import { DataSource } from 'typeorm';
+import { Album } from '../src/modules/catalog/entities/album.entity.js';
+import { Artist } from '../src/modules/catalog/entities/artist.entity.js';
+import { Track, TrackStatus } from '../src/modules/catalog/entities/track.entity.js';
 import { TrackAudioService } from '../src/modules/catalog/track-audio.service.js';
 
 const run = promisify(execFile);
@@ -89,4 +93,46 @@ export async function createReadyTrack(
   await app.get(TrackAudioService).onIdle();
 
   return { artistId: artist.body.id, albumId: album.body.id, trackId: track.body.id };
+}
+
+export interface CatalogRowsOptions {
+  artist: string;
+  album: string;
+  tracks: { title: string; status?: TrackStatus; deleted?: boolean; playCount?: number }[];
+}
+
+/**
+ * Inserts an artist, an album and its tracks straight into the database, with
+ * no audio files. Enough for queries over the catalog (search, history, home);
+ * use `createReadyTrack` when a test needs to stream.
+ */
+export async function insertCatalog(
+  app: NestExpressApplication,
+  options: CatalogRowsOptions,
+): Promise<{ artistId: string; albumId: string; trackIds: string[] }> {
+  const db = app.get(DataSource);
+  const unique = Math.random().toString(36).slice(2, 8);
+  const artist = await db
+    .getRepository(Artist)
+    .save({ name: options.artist, slug: `artist-${unique}` });
+  const album = await db
+    .getRepository(Album)
+    .save({ artistId: artist.id, title: options.album, slug: `album-${unique}` });
+  const trackIds: string[] = [];
+  for (const [index, spec] of options.tracks.entries()) {
+    const track = await db.getRepository(Track).save({
+      albumId: album.id,
+      artistId: artist.id,
+      title: spec.title,
+      trackNumber: index + 1,
+      durationMs: 180_000,
+      status: spec.status ?? TrackStatus.Ready,
+      playCount: spec.playCount ?? 0,
+    });
+    if (spec.deleted) {
+      await db.getRepository(Track).softDelete(track.id);
+    }
+    trackIds.push(track.id);
+  }
+  return { artistId: artist.id, albumId: album.id, trackIds };
 }

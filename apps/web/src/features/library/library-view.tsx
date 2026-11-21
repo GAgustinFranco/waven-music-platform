@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { History, Plus } from 'lucide-react';
 import {
   MEDIA_CARD_SIZES,
   MediaCard,
@@ -56,6 +56,19 @@ export function LibraryView() {
               subtitle="Your favorite tracks"
               image={null}
               cover={<LikedSongsCover className="w-full shadow-md" />}
+            />
+          </li>
+          <li>
+            <MediaCard
+              href="/history"
+              title="Listening history"
+              subtitle="Everything you played"
+              image={null}
+              cover={
+                <div className="bg-surface-2 text-muted-foreground flex aspect-square w-full items-center justify-center rounded-md shadow-md">
+                  <History aria-hidden="true" className="size-1/3" />
+                </div>
+              }
             />
           </li>
           {data.items.map((playlist) => (

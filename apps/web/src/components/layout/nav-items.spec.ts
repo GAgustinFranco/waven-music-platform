@@ -18,5 +18,6 @@ describe('isActive', () => {
     expect(isActive('/favorites', '/library')).toBe(true);
     expect(isActive('/favorites', '/')).toBe(false);
     expect(isActive('/playlists/1', '/search')).toBe(false);
+    expect(isActive('/history', '/library')).toBe(true);
   });
 });

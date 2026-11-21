@@ -14,8 +14,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: '/premium', label: 'Premium', icon: Gem },
 ];
 
-/** Playlists and Liked Songs belong to the library. */
-const LIBRARY_PAGES = ['/playlists/', '/favorites'];
+/** Playlists, Liked Songs and the listening history belong to the library. */
+const LIBRARY_PAGES = ['/playlists/', '/favorites', '/history'];
 
 export const isActive = (pathname: string, href: NavItem['href']) =>
   href === '/'

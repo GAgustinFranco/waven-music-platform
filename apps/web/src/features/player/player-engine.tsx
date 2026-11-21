@@ -1,6 +1,9 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { catalogKeys } from '@/lib/api/catalog';
+import { historyKeys } from '@/lib/api/history';
 import { playerStore } from '@/stores/player.store';
 import { audioEngine } from './audio-engine';
 import { focusKind, KEYBOARD_SEEK_MS, type PlayerShortcut, shortcutFor } from './shortcuts';
@@ -29,7 +32,19 @@ function run(shortcut: PlayerShortcut): void {
 
 /** Starts the audio engine and the global keyboard shortcuts. Renders nothing. */
 export function PlayerEngine() {
+  const queryClient = useQueryClient();
+
   useEffect(() => audioEngine.start(), []);
+
+  // A recorded play changes the history and Home's "Recently played".
+  useEffect(
+    () =>
+      audioEngine.onPlayRecorded(() => {
+        void queryClient.invalidateQueries({ queryKey: historyKeys.all });
+        void queryClient.invalidateQueries({ queryKey: catalogKeys.home() });
+      }),
+    [queryClient],
+  );
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

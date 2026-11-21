@@ -395,7 +395,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["HistoryController_list"];
         put?: never;
         post: operations["HistoryController_record"];
         delete?: never;
@@ -543,6 +543,22 @@ export interface paths {
         put: operations["FavoritesController_add"];
         post?: never;
         delete: operations["FavoritesController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SearchController_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -704,7 +720,7 @@ export interface components {
         HomeDto: {
             newReleases: components["schemas"]["AlbumSummaryDto"][];
             popularTracks: components["schemas"]["TrackDto"][];
-            /** @description Empty until listening history exists. */
+            /** @description Your last distinct public tracks, latest play first (up to 10). */
             recentlyPlayed: components["schemas"]["TrackDto"][];
         };
         /** @enum {string} */
@@ -826,6 +842,28 @@ export interface components {
         };
         /** @enum {string} */
         PlayContext: "album" | "artist" | "playlist" | "search" | "home" | "favorites" | "other";
+        HistoryEntryDto: {
+            /**
+             * Format: uuid
+             * @description One entry per play.
+             */
+            id: string;
+            /** Format: date-time */
+            playedAt: string;
+            context: components["schemas"]["PlayContext"];
+            /** @description `false` when the track was deleted or is not playable. */
+            available: boolean;
+            track: components["schemas"]["TrackDto"];
+        };
+        HistoryPageDto: {
+            /** @description Newest play first. */
+            items: components["schemas"]["HistoryEntryDto"][];
+            /**
+             * Format: uuid
+             * @description Pass it as `cursor` for the next page; `null` on the last one.
+             */
+            nextCursor: string | null;
+        };
         RecordPlayDto: {
             /**
              * Format: uuid
@@ -924,6 +962,28 @@ export interface components {
         FavoritesContainsDto: {
             /** @description The requested ids that are liked. */
             trackIds: string[];
+        };
+        /** @enum {string} */
+        SearchType: "all" | "track" | "album" | "artist";
+        /** @enum {string} */
+        SearchHitType: "track" | "album" | "artist";
+        TopResultDto: {
+            type: components["schemas"]["SearchHitType"];
+            /**
+             * Format: uuid
+             * @description Id of an item in the matching list.
+             */
+            id: string;
+        };
+        SearchResultsDto: {
+            /** @description Best match first. */
+            tracks: components["schemas"]["TrackDto"][];
+            /** @description Best match first. */
+            albums: components["schemas"]["AlbumSummaryDto"][];
+            /** @description Best match first. */
+            artists: components["schemas"]["ArtistSummaryDto"][];
+            /** @description The best hit across types; only with `type=all`. */
+            topResult: components["schemas"]["TopResultDto"] | null;
         };
     };
     responses: never;
@@ -1324,6 +1384,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Recently played is per user. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2269,6 +2330,44 @@ export interface operations {
             };
         };
     };
+    HistoryController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description The `nextCursor` of the previous page; omit it for the newest plays. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newest play first, one entry per play. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryPageDto"];
+                };
+            };
+            /** @description Invalid `limit` or `cursor`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     HistoryController_record: {
         parameters: {
             query?: never;
@@ -2760,6 +2859,46 @@ export interface operations {
         responses: {
             /** @description Unliked, or was not liked. */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SearchController_search: {
+        parameters: {
+            query: {
+                /** @description Case- and accent-insensitive, tolerant to small typos. Blank returns nothing. */
+                q: string;
+                type?: components["schemas"]["SearchType"];
+                /** @description Maximum results per type. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public catalog only, grouped by type. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResultsDto"];
+                };
+            };
+            /** @description Missing or too long `q`, unknown `type`, bad `limit`. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

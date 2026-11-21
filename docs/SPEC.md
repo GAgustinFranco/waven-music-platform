@@ -101,7 +101,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | POST | `/tracks/:id/stream` | user | Returns `{ url, quality, expiresAt }`, a signed URL based on the plan. |
 | GET | `/stream/:trackId?token=` | signed token | Audio with `Range` support (206). With S3 storage, it redirects (302) to a presigned URL. |
 | GET | `/media/*` | public | Cover and artist images (in dev; in prod, a CDN or public bucket). |
-| GET | `/search?q=&type=&limit=` | user | `type` = `track`\|`album`\|`artist`\|`all`. |
+| GET | `/search?q=&type=&limit=` | user | `type` = `track`\|`album`\|`artist`\|`all`. Returns `{ tracks, albums, artists, topResult }`; `limit` (1–20, default 10) applies per type. |
 
 **Library**
 | Method | Path | Access | Description |
@@ -116,7 +116,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | GET | `/me/favorites/contains?ids=` | user | To render the hearts in a list. |
 | PUT · DELETE | `/me/favorites/:trackId` | user | Idempotent. |
 | POST | `/me/history` | user | Takes `{ playId, trackId, msPlayed, context }`; 204. Repeating a `playId` is a no-op. |
-| GET | `/me/history` | user | |
+| GET | `/me/history?limit=&cursor=` | user | Newest play first, one entry per play. Returns `{ items, nextCursor }`. |
 
 **Billing**
 | Method | Path | Access | Description |
@@ -197,14 +197,14 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - The stream token is self-contained (HMAC-SHA256 over `{ userId, trackId, quality, exp }`), because `/stream` takes no JWT. "Another user's token" therefore means a token whose claims were altered (the signature fails) or one issued for a different track; both return 401.
 - Stream URLs are built from `STREAM_BASE_URL` (the web proxy, `/api`, by default) and image URLs from `MEDIA_PUBLIC_URL`. `/media/*` only serves processed images, never audio.
 - Only single `bytes` ranges are honored; multi-range or malformed `Range` headers get the full file (200), as RFC 9110 allows.
-- "Recently played" on `/browse/home` is an empty list until listening history exists.
+- "Recently played" on `/browse/home` is per user: the last 10 distinct public tracks, ordered by their latest play.
 - The Jamendo seed takes the most popular tracks (`order=popularity_total`) in the `mp32` format and stores the license name (for example `CC BY-NC-SA 3.0`) and the Jamendo track page as `attributionUrl`.
 - Design tokens live only in the `:root` block of `apps/web/src/app/globals.css`. shadcn/ui's semantic variables point at them; because shadcn uses `accent` for hover surfaces, Tailwind's `accent` maps to `--elevated` and the brand violet is exposed as `brand`. Focus is a global `:focus-visible` outline (2 px `--accent`, 2 px offset).
 - Covers and artist images are plain responsive `<img>` elements (`srcSet` over the API's 64/300/640 px WebP files) instead of `next/image`, because the API already resizes them and the optimizer refuses private IPs in development.
 - An album's `dominantColor` reaches the CSS only as the `--dominant-color` variable and only if it is a 6-digit hex color. Artists have no color of their own, so their header borrows the first album color the API returns.
 - Catalog pages render on the client under `<Suspense>`: with Cache Components, route params and the pathname are request-time data. A malformed id or a 400/404 from the API shows a "not found" state; other errors show a retry button.
 - Track details (license and attribution link) open in a popover from an info button on every track row.
-- Search and Premium are "Coming soon" pages until phases 6 and 9, so the navigation is complete from the start.
+- Premium is a "Coming soon" page until phase 9, so the navigation is complete from the start.
 - The web runs unit tests with Vitest (the same version as the API) for pure helpers; component tests are not set up yet.
 - When the session cannot be restored on load because the API is unreachable (network error or 5xx, including the web proxy's error), the web shows "We can't reach Waven right now" with a retry button instead of signing the user out. Only 4xx answers from `/auth/refresh` sign the user out. A failed refresh while already signed in keeps the current state, and each query shows its own error.
 - `POST /me/history` takes a client-generated `playId` (one per play), unique per user, so retries never count a play twice; it answers 204 either way. A play shorter than the threshold gets 422 `PLAY_TOO_SHORT`.
@@ -235,3 +235,13 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - The upgrade prompt (US-16) opens when `POST /playlists` answers `PLAN_LIMIT_REACHED`. It links to `/premium`, a "Coming soon" page until phase 9.
 - The sidebar library hydrates after the session is restored, so it first renders without playlists (as the server did) to avoid a hydration mismatch.
 - `PaginationQueryDto` declares `limit` and `offset` as integers in OpenAPI, so the generated client types them as numbers.
+- Search compares `f_unaccent(lower(column))`, the expression the GIN trigram indexes are built on. `unaccent()` is not immutable, so the migration adds an immutable `f_unaccent()` wrapper. Tracks match on their title, albums on their title and artists on their name.
+- A hit is a substring match (`LIKE`, with wildcards in the query escaped) or a fuzzy word match (`<%`), with `pg_trgm.word_similarity_threshold` set to 0.5 for each search transaction. The default of 0.6 misses one-letter typos in short words.
+- Hits are ranked by `word_similarity`, plus a bonus for an exact match (1), a prefix match (0.5) or a substring match (0.25). Ties go to the most played track, the newest album, or the artist name in A–Z order.
+- `topResult` is the best hit across types and is only returned with `type=all`. On a tie, artists win over albums and albums over tracks. A blank `q` returns empty lists, and a missing or too long `q` (over 100 characters) gets 400.
+- `GET /me/history` uses keyset pagination over `(playedAt, id)`, and `nextCursor` is the id of the last entry. A play recorded while paging never shifts a page, so no entry shows up twice. An unknown cursor, or someone else's, returns an empty page. Deleted tracks stay in the history with `available: false`.
+- The web search page keeps `?q=&type=` in the URL, which is the source of truth. The input writes to it 250 ms after the last keystroke with `router.replace`, so typing does not fill the back stack. The previous results stay on screen, dimmed, while the next ones load. "All" shows up to 6 hits per type and 4 songs next to the top result; a single type shows up to 20.
+- Playing the top song queues the other song results after it. Search plays use the `search` context; replays from the history page use `other`.
+- The listening history lives at `/history`, which counts as a Library page. It is grouped by local day, loads 50 plays at a time with "Show more", and is linked from Home ("Show all") and from the Library grid.
+- After the API accepts a play, the web invalidates the history list and Home, so "Recently played" updates without a reload.
+- The p95 search target is measured on the API over HTTP: 280 searches on the 300-track seeded catalog took 12 ms at p95 (8 ms at p50). Each SQL lookup takes about 3 ms at p95.

@@ -476,7 +476,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "",
+            "description": "Recently played is per user.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1483,6 +1483,58 @@
       }
     },
     "/me/history": {
+      "get": {
+        "operationId": "HistoryController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `nextCursor` of the previous page; omit it for the newest plays.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Newest play first, one entry per play.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid `limit` or `cursor`."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "me"
+        ]
+      },
       "post": {
         "operationId": "HistoryController_record",
         "parameters": [],
@@ -2066,6 +2118,74 @@
         ],
         "tags": [
           "library"
+        ]
+      }
+    },
+    "/search": {
+      "get": {
+        "operationId": "SearchController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Case- and accent-insensitive, tolerant to small typos. Blank returns nothing.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "all",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SearchType"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum results per type.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "default": 10,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public catalog only, grouped by type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or too long `q`, unknown `type`, bad `limit`."
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "search"
         ]
       }
     }
@@ -2671,7 +2791,7 @@
             }
           },
           "recentlyPlayed": {
-            "description": "Empty until listening history exists.",
+            "description": "Your last distinct public tracks, latest play first (up to 10).",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TrackDto"
@@ -3135,6 +3255,63 @@
           "other"
         ]
       },
+      "HistoryEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "One entry per play."
+          },
+          "playedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlayContext"
+              }
+            ]
+          },
+          "available": {
+            "type": "boolean",
+            "description": "`false` when the track was deleted or is not playable."
+          },
+          "track": {
+            "$ref": "#/components/schemas/TrackDto"
+          }
+        },
+        "required": [
+          "id",
+          "playedAt",
+          "context",
+          "available",
+          "track"
+        ]
+      },
+      "HistoryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Newest play first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryEntryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Pass it as `cursor` for the next page; `null` on the last one."
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
       "RecordPlayDto": {
         "type": "object",
         "properties": {
@@ -3454,6 +3631,86 @@
         },
         "required": [
           "trackIds"
+        ]
+      },
+      "SearchType": {
+        "type": "string",
+        "enum": [
+          "all",
+          "track",
+          "album",
+          "artist"
+        ]
+      },
+      "SearchHitType": {
+        "type": "string",
+        "enum": [
+          "track",
+          "album",
+          "artist"
+        ]
+      },
+      "TopResultDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchHitType"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id of an item in the matching list."
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
+      "SearchResultsDto": {
+        "type": "object",
+        "properties": {
+          "tracks": {
+            "description": "Best match first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackDto"
+            }
+          },
+          "albums": {
+            "description": "Best match first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlbumSummaryDto"
+            }
+          },
+          "artists": {
+            "description": "Best match first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtistSummaryDto"
+            }
+          },
+          "topResult": {
+            "nullable": true,
+            "description": "The best hit across types; only with `type=all`.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TopResultDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tracks",
+          "albums",
+          "artists",
+          "topResult"
         ]
       }
     }

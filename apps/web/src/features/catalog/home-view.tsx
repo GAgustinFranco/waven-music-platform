@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Disc3, History, ListMusic } from 'lucide-react';
+import Link from 'next/link';
 import { MediaCard, MediaGrid, MediaGridSkeleton } from '@/components/catalog/media-card';
 import { Section } from '@/components/catalog/section';
 import { EmptyState, ErrorState, LoadingStatus } from '@/components/catalog/states';
@@ -94,7 +95,21 @@ export function HomeView() {
             )}
           </Section>
 
-          <Section id="recently-played" title="Recently played">
+          <Section
+            id="recently-played"
+            title="Recently played"
+            action={
+              data.recentlyPlayed.length > 0 ? (
+                <Link
+                  href="/history"
+                  className="text-muted-foreground hover:text-foreground rounded-sm text-sm font-medium"
+                >
+                  Show all
+                  <span className="sr-only"> listening history</span>
+                </Link>
+              ) : null
+            }
+          >
             {data.recentlyPlayed.length > 0 ? (
               <TrackList label="Recently played">
                 {data.recentlyPlayed.map((track, index) => (

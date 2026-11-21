@@ -54,6 +54,7 @@ class AudioEngine {
   private loadSeq = 0;
   private lastProgressMs = -1;
   private cleanups: (() => void)[] = [];
+  private playListeners = new Set<() => void>();
 
   private get audio(): HTMLAudioElement | undefined {
     return this.elements[this.active];
@@ -61,6 +62,14 @@ class AudioEngine {
 
   private get state(): PlayerState {
     return playerStore.getState();
+  }
+
+  /** Called after the API accepts a play, so the UI can refresh history views. */
+  onPlayRecorded(listener: () => void): () => void {
+    this.playListeners.add(listener);
+    return () => {
+      this.playListeners.delete(listener);
+    };
   }
 
   /** Starts the engine once per page; returns the cleanup for the effect. */
@@ -420,13 +429,19 @@ class AudioEngine {
       context: this.state.source?.context ?? 'other',
     };
     const send = (retry: boolean) =>
-      reportPlay(body).catch((error: unknown) => {
-        // The playId makes a retry safe; client errors will not fix themselves.
-        const transient = !(error instanceof ApiError) || error.statusCode >= 500;
-        if (retry && transient) {
-          setTimeout(() => void send(false), HISTORY_RETRY_MS);
-        }
-      });
+      reportPlay(body)
+        .then(() => {
+          for (const listener of this.playListeners) {
+            listener();
+          }
+        })
+        .catch((error: unknown) => {
+          // The playId makes a retry safe; client errors will not fix themselves.
+          const transient = !(error instanceof ApiError) || error.statusCode >= 500;
+          if (retry && transient) {
+            setTimeout(() => void send(false), HISTORY_RETRY_MS);
+          }
+        });
     void send(true);
   }
 

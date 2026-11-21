@@ -7,6 +7,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto.js';
+import { type AuthUser } from '../auth/auth.types.js';
+import { CurrentUser } from '../auth/decorators/auth.decorators.js';
 import { CatalogService } from './catalog.service.js';
 import {
   AlbumDetailDto,
@@ -82,8 +84,8 @@ export class BrowseController {
   constructor(private readonly catalog: CatalogService) {}
 
   @Get('home')
-  @ApiOkResponse({ type: HomeDto })
-  home(): Promise<HomeDto> {
-    return this.catalog.home();
+  @ApiOkResponse({ type: HomeDto, description: 'Recently played is per user.' })
+  home(@CurrentUser() user: AuthUser): Promise<HomeDto> {
+    return this.catalog.home(user.id);
   }
 }

@@ -1,16 +1,17 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiNoContentResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { type AuthUser } from '../auth/auth.types.js';
 import { CurrentUser } from '../auth/decorators/auth.decorators.js';
-import { RecordPlayDto } from './history.dto.js';
+import { HistoryPageDto, HistoryQueryDto, RecordPlayDto } from './history.dto.js';
 import { HistoryService } from './history.service.js';
 
 @ApiTags('me')
@@ -19,6 +20,13 @@ import { HistoryService } from './history.service.js';
 @Controller('me/history')
 export class HistoryController {
   constructor(private readonly history: HistoryService) {}
+
+  @Get()
+  @ApiOkResponse({ type: HistoryPageDto, description: 'Newest play first, one entry per play.' })
+  @ApiBadRequestResponse({ description: 'Invalid `limit` or `cursor`.' })
+  list(@CurrentUser() user: AuthUser, @Query() query: HistoryQueryDto): Promise<HistoryPageDto> {
+    return this.history.list(user.id, query.limit, query.cursor);
+  }
 
   @Post()
   @HttpCode(HttpStatus.NO_CONTENT)
