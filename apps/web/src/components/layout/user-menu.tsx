@@ -34,6 +34,10 @@ export function UserMenu() {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
 
+  if (status === 'unreachable') {
+    // Nothing to load until the API is back (SessionGate shows the error).
+    return null;
+  }
   if (!me) {
     return <Skeleton className="size-8 rounded-full" aria-label="Loading your account" />;
   }

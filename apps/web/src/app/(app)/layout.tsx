@@ -4,6 +4,7 @@ import { BottomNav } from '@/components/layout/bottom-nav';
 import { PlayerBarSlot } from '@/components/layout/player-bar-slot';
 import { Sidebar } from '@/components/layout/sidebar';
 import { UserMenu } from '@/components/layout/user-menu';
+import { SessionGate } from '@/features/auth/session-gate';
 
 /**
  * App shell (ARCHITECTURE §7): sidebar + scrolling content + player bar on
@@ -34,7 +35,7 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
         </header>
         {/* Pages render their own header and sections; -mt-16 lets gradients reach the top. */}
         <main id="main" tabIndex={-1} className="-mt-16 flex flex-1 flex-col pb-8 outline-none">
-          {children}
+          <SessionGate>{children}</SessionGate>
         </main>
       </div>
 

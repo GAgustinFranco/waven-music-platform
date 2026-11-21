@@ -37,6 +37,11 @@ export function refreshAccessToken(): Promise<string | null> {
           credentials: 'same-origin',
         }),
       );
+      if (response.status >= 500) {
+        // The API (or the proxy in front of it) is down: the session may still be valid.
+        useAuthStore.getState().markUnreachable();
+        return null;
+      }
       if (!response.ok) {
         useAuthStore.getState().clear();
         return null;
@@ -45,7 +50,8 @@ export function refreshAccessToken(): Promise<string | null> {
       useAuthStore.getState().setAccessToken(accessToken);
       return accessToken;
     } catch {
-      // Network error: keep the current state and let the caller decide.
+      // Network error: a signed-in user keeps their state; a restore is marked unreachable.
+      useAuthStore.getState().markUnreachable();
       return null;
     } finally {
       refreshInFlight = null;
