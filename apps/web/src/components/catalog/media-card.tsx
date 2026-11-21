@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
+import { PrefetchLink } from './prefetch-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ImageSet } from '@/lib/api/catalog';
 import { CoverImage } from './cover-image';
@@ -28,7 +28,7 @@ export function MediaCard({
   cover,
 }: MediaCardProps) {
   return (
-    <Link
+    <PrefetchLink
       href={href}
       className="group hover:bg-surface-2 flex flex-col gap-3 rounded-md p-2 transition-colors duration-150 ease-standard sm:p-3"
     >
@@ -41,7 +41,7 @@ export function MediaCard({
           <span className="text-muted-foreground block truncate text-sm">{subtitle}</span>
         ) : null}
       </span>
-    </Link>
+    </PrefetchLink>
   );
 }
 

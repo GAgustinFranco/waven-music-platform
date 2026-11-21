@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserRound } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,16 +17,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { logout } from '@/lib/api/client';
+import { initialsOf } from '@/lib/format';
 import { meQuery } from '@/lib/api/queries';
 import { useAuthStore } from '@/stores/auth.store';
-
-const initialsOf = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
 
 export function UserMenu() {
   const status = useAuthStore((state) => state.status);
@@ -70,6 +64,12 @@ export function UserMenu() {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/profile">
+            <UserRound aria-hidden="true" />
+            Profile and plan
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem disabled={signingOut} onSelect={() => void signOut()}>
           <LogOut aria-hidden="true" />
           Sign out

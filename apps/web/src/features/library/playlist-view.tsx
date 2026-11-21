@@ -27,6 +27,7 @@ import {
   DominantHeader,
   DominantHeaderSkeleton,
 } from '@/components/catalog/dominant-header';
+import { toast } from 'sonner';
 import { EmptyState, ErrorState, LoadingStatus } from '@/components/catalog/states';
 import { TrackList, TrackListSkeleton, TrackRow } from '@/components/catalog/track-row';
 import { PlaylistCover } from '@/components/library/playlist-cover';
@@ -44,7 +45,6 @@ import { isNotFound, isUuid, type Track } from '@/lib/api/catalog';
 import { type PlaylistDetail, type PlaylistEntry, playlistQuery } from '@/lib/api/library';
 import { formatTotalDuration, pluralize } from '@/lib/format';
 import { type PlaySource, usePlayerStore } from '@/stores/player.store';
-import { useLibrary } from './library-provider';
 import { useMoveEntry, useRemoveEntry } from './mutations';
 import { DeletePlaylistDialog, EditPlaylistDialog } from './playlist-dialogs';
 import { useLikedSet } from './use-liked';
@@ -203,7 +203,6 @@ function PlaylistEntries({
   const entries = playlist.entries;
   const move = useMoveEntry(playlist.id);
   const remove = useRemoveEntry(playlist.id);
-  const { announce } = useLibrary();
   const liked = useLikedSet(entries.map((entry) => entry.track.id));
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -220,7 +219,7 @@ function PlaylistEntries({
     if (from >= 0 && to >= 0 && from !== to) {
       move.mutate(
         { entryId: String(active.id), from, to },
-        { onError: () => announce("Couldn't reorder the playlist. Try again.") },
+        { onError: () => toast.error("Couldn't reorder the playlist. Try again.") },
       );
     }
   };
@@ -266,8 +265,9 @@ function PlaylistEntries({
                 remove.mutate(
                   { entryId: entry.id },
                   {
-                    onSuccess: () => announce(`Removed ${entry.track.title} from ${playlist.name}`),
-                    onError: () => announce("Couldn't remove the track. Try again."),
+                    onSuccess: () =>
+                      toast.success(`Removed ${entry.track.title} from ${playlist.name}`),
+                    onError: () => toast.error("Couldn't remove the track. Try again."),
                   },
                 )
               }

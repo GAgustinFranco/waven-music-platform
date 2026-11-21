@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
-import Link from 'next/link';
+import { PrefetchLink } from '@/components/catalog/prefetch-link';
 import type { ReactNode } from 'react';
 import { cn } from 'cn';
 import { LikedSongsCover, PlaylistCover } from '@/components/library/playlist-cover';
@@ -102,7 +102,7 @@ function SidebarItem({
 }) {
   return (
     <li>
-      <Link
+      <PrefetchLink
         href={href}
         title={title}
         aria-current={active ? 'page' : undefined}
@@ -118,7 +118,7 @@ function SidebarItem({
           </span>
           <span className="text-muted-foreground block truncate text-xs">{subtitle}</span>
         </span>
-      </Link>
+      </PrefetchLink>
     </li>
   );
 }

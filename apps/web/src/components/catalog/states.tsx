@@ -1,6 +1,7 @@
 import { CircleAlert, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { EmptyIllustration } from './empty-illustration';
 
 type HeadingLevel = 'h1' | 'h2' | 'h3';
 
@@ -22,7 +23,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="bg-surface flex flex-col items-center gap-3 rounded-md px-6 py-10 text-center">
-      <Icon aria-hidden="true" className="text-muted-foreground size-8" />
+      <EmptyIllustration icon={Icon} />
       <Heading className="text-base font-semibold">{title}</Heading>
       {description ? <p className="text-muted-foreground max-w-sm text-sm">{description}</p> : null}
       {children}

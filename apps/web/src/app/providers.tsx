@@ -1,9 +1,12 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MotionConfig } from 'motion/react';
 import { type ReactNode, Suspense, useState } from 'react';
+import { Toaster } from '@/components/ui/sonner';
 import { AuthBootstrap } from '@/features/auth/auth-bootstrap';
 import { ApiError } from '@/lib/api/queries';
+import { EASE_STANDARD } from '@/lib/motion';
 
 function createQueryClient() {
   return new QueryClient({
@@ -23,11 +26,15 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Reads the pathname (request-time data); it renders nothing, so no fallback. */}
-      <Suspense>
-        <AuthBootstrap />
-      </Suspense>
-      {children}
+      {/* `reducedMotion="user"` drops transform/layout animations under prefers-reduced-motion. */}
+      <MotionConfig reducedMotion="user" transition={{ duration: 0.25, ease: EASE_STANDARD }}>
+        {/* Reads the pathname (request-time data); it renders nothing, so no fallback. */}
+        <Suspense>
+          <AuthBootstrap />
+        </Suspense>
+        {children}
+        <Toaster />
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

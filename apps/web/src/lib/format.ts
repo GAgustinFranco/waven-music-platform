@@ -40,3 +40,20 @@ export function releaseYear(date: string | null): string | null {
 
 export const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
   `${count} ${count === 1 ? singular : plural}`;
+
+/** Up to two initials for an avatar fallback ("Ada Lovelace" → "AL"). */
+export const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+
+const MONTH_YEAR = new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' });
+
+/** "November 2026" from an ISO timestamp, or null if it does not parse. */
+export function formatMonthYear(iso: string): string | null {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : MONTH_YEAR.format(date);
+}

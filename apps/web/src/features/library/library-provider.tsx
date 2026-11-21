@@ -11,9 +11,9 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -37,8 +37,6 @@ interface CreateOptions {
 interface LibraryContextValue {
   createPlaylist: (options?: CreateOptions) => void;
   creating: boolean;
-  /** A short confirmation, shown briefly and read by screen readers. */
-  announce: (message: string) => void;
 }
 
 const LibraryContext = createContext<LibraryContextValue | null>(null);
@@ -51,29 +49,18 @@ export function useLibrary(): LibraryContextValue {
   return value;
 }
 
-const MESSAGE_MS = 3_000;
-
 /**
  * Library actions shared by the sidebar, the library page and the track menus:
  * creating a playlist (with the upgrade prompt when the plan's limit is hit,
- * US-16), confirmations, and refetching what other tabs changed.
+ * US-16) and refetching what other tabs changed. Confirmations are toasts.
  */
 export function LibraryProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const create = useCreatePlaylist();
   const [limitReached, setLimitReached] = useState(false);
-  const [message, setMessage] = useState('');
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => listenToLibraryChanges(queryClient), [queryClient]);
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  const announce = useCallback((text: string) => {
-    clearTimeout(timer.current);
-    setMessage(text);
-    timer.current = setTimeout(() => setMessage(''), MESSAGE_MS);
-  }, []);
 
   const { mutate, isPending } = create;
   const createPlaylist = useCallback(
@@ -82,7 +69,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         { trackIds },
         {
           onSuccess: (playlist) => {
-            announce(`Created ${playlist.name}`);
+            toast.success(`Created ${playlist.name}`);
             if (navigate) {
               router.push(`/playlists/${playlist.id}`);
             }
@@ -91,35 +78,24 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
             if (error instanceof ApiError && error.code === 'PLAN_LIMIT_REACHED') {
               setLimitReached(true);
             } else {
-              announce("Couldn't create the playlist. Try again.");
+              toast.error("Couldn't create the playlist. Try again.");
             }
           },
         },
       );
     },
-    [announce, mutate, router],
+    [mutate, router],
   );
 
   const value = useMemo(
-    () => ({ createPlaylist, creating: isPending, announce }),
-    [announce, createPlaylist, isPending],
+    () => ({ createPlaylist, creating: isPending }),
+    [createPlaylist, isPending],
   );
 
   return (
     <LibraryContext value={value}>
       {children}
       <UpgradeDialog open={limitReached} onOpenChange={setLimitReached} />
-      <p
-        role="status"
-        aria-live="polite"
-        className={
-          message
-            ? 'bg-elevated text-foreground fixed bottom-40 left-1/2 z-50 -translate-x-1/2 rounded-md px-4 py-2 text-sm font-medium shadow-lg md:bottom-28'
-            : 'sr-only'
-        }
-      >
-        {message}
-      </p>
     </LibraryContext>
   );
 }
