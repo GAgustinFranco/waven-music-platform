@@ -17,6 +17,7 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "openapi": "pnpm -F api openapi:export && pnpm -F web openapi:types",
     "prepare": "husky"
   },
   "devDependencies": {

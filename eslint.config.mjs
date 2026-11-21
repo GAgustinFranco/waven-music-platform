@@ -19,6 +19,7 @@ export default defineConfig([
   globalIgnores([
     '**/node_modules/**',
     '**/dist/**',
+    '**/dist-scripts/**',
     '**/.next/**',
     '**/coverage/**',
     'apps/web/next-env.d.ts',

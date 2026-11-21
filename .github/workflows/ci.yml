@@ -61,6 +61,16 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # The web client is generated from the API contract; both files are committed.
+      - name: Check the OpenAPI contract is up to date
+        run: |
+          pnpm openapi
+          if [ -n "$(git status --porcelain -- apps/api/openapi.json apps/web/src/lib/api/schema.ts)" ]; then
+            git --no-pager diff -- apps/api/openapi.json apps/web/src/lib/api/schema.ts
+            echo "::error::openapi.json or schema.ts is out of date. Run 'pnpm openapi' and commit the result."
+            exit 1
+          fi
+
       - name: Unit tests
         run: pnpm test
 

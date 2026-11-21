@@ -178,3 +178,13 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - The Postgres host ports default to 5432 (dev) and 5433 (test), and can be overridden with `DB_PORT`/`DB_TEST_PORT` in the root `.env` when a local Postgres already uses them. `DATABASE_URL` and `TEST_DATABASE_URL` must use the same ports.
 - ESLint stays on v9 until `eslint-plugin-react` (used by `eslint-config-next`) supports v10.
 - Dependency versions are pinned exactly. pnpm's minimum release age is respected: releases published less than a day ago are not used.
+- Refresh tokens are opaque random values stored only as SHA-256 hashes. Every refresh rotates the token and slides its 30-day expiry. Presenting a revoked token, or losing a race for the same token, revokes the whole family. Other devices (other families) stay signed in.
+- The access JWT carries the role, so a role change applies at the next refresh (at most 15 min later).
+- The web serializes refreshes across tabs with the Web Locks API, because the cookie jar is shared and a parallel refresh with the same cookie would look like token reuse.
+- Cookies get the `Secure` flag only when `WEB_URL` is https, so local development works over plain http. The OAuth `state` is kept in a short-lived httpOnly cookie, because the API has no server-side sessions.
+- `ADMIN_EMAILS` only grants the admin role at login; it never removes it.
+- Until billing (phase 9) every user is on the Free plan, so `GET /me` always reports `free`.
+- `GET /admin/users` (paginated list) is added in phase 1 to test the roles guard; phase 8 extends it with search and role changes.
+- The global throttler is skipped when `NODE_ENV=test`, because every e2e request comes from the same IP.
+- The OpenAPI export builds the Nest module graph in preview mode with fixed placeholder env vars, so it needs no database and its output does not depend on the developer's `.env`.
+- The TypeORM CLI only needs `DATABASE_URL`, so migrations do not require the OAuth or JWT secrets. UUIDs use `gen_random_uuid()` (pgcrypto, built into Postgres 13+).
