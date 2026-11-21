@@ -156,7 +156,7 @@ export function SearchView() {
           aria-busy={query.isPlaceholderData || undefined}
           className={cn(
             'ease-standard transition-opacity duration-150',
-            query.isPlaceholderData && 'opacity-60',
+            query.isPlaceholderData && 'opacity-75',
           )}
         >
           <Results results={data} q={q} type={type} settled={!query.isPlaceholderData} />

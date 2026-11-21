@@ -95,8 +95,8 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Profile and plan page, toasts, `motion` transitions, illustrated empty states, prefetch on hover and a contrast review.
 
 **Acceptance criteria**
-- [ ] No layout shift (CLS < 0.1).
-- [ ] Everything works with `prefers-reduced-motion`.
+- [x] No layout shift (CLS < 0.1).
+- [x] Everything works with `prefers-reduced-motion`.
 
 ### Phase 8 — Admin panel
 - Backend: `/admin/users`, `/admin/subscriptions` and `/admin/stats`.

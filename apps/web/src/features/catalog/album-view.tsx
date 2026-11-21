@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ListMusic } from 'lucide-react';
-import Link from 'next/link';
+import { PrefetchLink } from '@/components/catalog/prefetch-link';
 import { useParams } from 'next/navigation';
 import { DominantHeader, DominantHeaderSkeleton } from '@/components/catalog/dominant-header';
 import { EmptyState, ErrorState, LoadingStatus } from '@/components/catalog/states';
@@ -63,12 +63,12 @@ export function AlbumView() {
         dominantColor={data.dominantColor}
       >
         <p className="flex flex-wrap items-center gap-x-1.5">
-          <Link
+          <PrefetchLink
             href={`/artists/${data.artist.id}`}
             className="inline-block rounded-sm py-0.5 font-semibold hover:underline"
           >
             {data.artist.name}
-          </Link>
+          </PrefetchLink>
           {year ? <span aria-hidden="true">·</span> : null}
           {year ? <span>{year}</span> : null}
           <span aria-hidden="true">·</span>

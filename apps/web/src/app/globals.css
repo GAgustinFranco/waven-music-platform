@@ -14,6 +14,8 @@
   --surface-2: #1c1c27;
   --elevated: #252533;
   --border: #2e2e3d;
+  /* Form field outlines: ≥ 3:1 on every surface, elevated included (WCAG 1.4.11). */
+  --border-strong: #70708a;
   --text: #f4f4f8;
   --text-muted: #a1a1b5;
   --accent: #8b7bff;
@@ -25,6 +27,9 @@
   --scrim: rgb(11 11 16 / 80%);
 
   --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Toasts sit above the mini player + bottom navigation (mobile) or the player bar. */
+  --toast-offset: calc(64px + 64px + 16px);
 
   /*
    * shadcn/ui semantic names, mapped onto the tokens so the generated primitives
@@ -44,8 +49,14 @@
   --muted: var(--surface-2);
   --muted-foreground: var(--text-muted);
   --destructive: var(--danger);
-  --input: var(--border);
+  --input: var(--border-strong);
   --ring: var(--accent);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --toast-offset: calc(88px + 16px);
+  }
 }
 
 @theme inline {
@@ -102,6 +113,17 @@
 
   /* Motion: pair with duration-150 (hover) or duration-250 (panels). */
   --ease-standard: var(--motion-ease);
+
+  /* Decorative drift for empty-state art; use with motion-safe:animate-float. */
+  --animate-float: float 3.6s var(--motion-ease) infinite alternate;
+  @keyframes float {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-4px);
+    }
+  }
 }
 
 @layer base {

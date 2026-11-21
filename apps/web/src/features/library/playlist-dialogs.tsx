@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useId, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,7 +13,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { PlaylistDetail } from '@/lib/api/library';
-import { useLibrary } from './library-provider';
 import { useDeletePlaylist, useUpdatePlaylist } from './mutations';
 
 const NAME_MAX = 100;
@@ -42,7 +42,6 @@ function EditPlaylistForm({ playlist, onDone }: { playlist: PlaylistDetail; onDo
   const [name, setName] = useState(playlist.name);
   const [description, setDescription] = useState(playlist.description ?? '');
   const update = useUpdatePlaylist(playlist.id);
-  const { announce } = useLibrary();
   const trimmed = name.trim();
 
   const onSubmit = (event: FormEvent) => {
@@ -54,7 +53,7 @@ function EditPlaylistForm({ playlist, onDone }: { playlist: PlaylistDetail; onDo
       { name: trimmed, description: description.trim() || null },
       {
         onSuccess: () => {
-          announce('Playlist saved');
+          toast.success('Playlist saved');
           onDone();
         },
       },
@@ -124,7 +123,6 @@ function EditPlaylistForm({ playlist, onDone }: { playlist: PlaylistDetail; onDo
 export function DeletePlaylistDialog({ playlist, open, onOpenChange }: DialogProps) {
   const remove = useDeletePlaylist(playlist.id);
   const router = useRouter();
-  const { announce } = useLibrary();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -152,7 +150,7 @@ export function DeletePlaylistDialog({ playlist, open, onOpenChange }: DialogPro
             onClick={() =>
               remove.mutate(undefined, {
                 onSuccess: () => {
-                  announce(`Deleted ${playlist.name}`);
+                  toast.success(`Deleted ${playlist.name}`);
                   router.push('/library');
                 },
               })

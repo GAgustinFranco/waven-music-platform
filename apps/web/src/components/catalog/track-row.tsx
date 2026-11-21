@@ -1,7 +1,7 @@
 'use client';
 
 import { AudioLines, ExternalLink, Info, Pause, Play } from 'lucide-react';
-import Link from 'next/link';
+import { PrefetchLink } from './prefetch-link';
 import { type CSSProperties, type ReactNode, type Ref, useState } from 'react';
 import { cn } from 'cn';
 import { Button } from '@/components/ui/button';
@@ -116,23 +116,23 @@ export function TrackRow({
           </p>
           {unavailable ? <p className="text-muted-foreground text-xs">Unavailable</p> : null}
           {showArtist && !unavailable ? (
-            <Link
+            <PrefetchLink
               href={`/artists/${track.artist.id}`}
               className="text-muted-foreground hover:text-foreground block truncate rounded-sm py-0.5 text-sm hover:underline"
             >
               {track.artist.name}
-            </Link>
+            </PrefetchLink>
           ) : null}
         </div>
       </div>
 
       {showAlbum ? (
-        <Link
+        <PrefetchLink
           href={`/albums/${track.album.id}`}
           className="text-muted-foreground hover:text-foreground hidden truncate rounded-sm py-0.5 text-sm hover:underline lg:block"
         >
           {track.album.title}
-        </Link>
+        </PrefetchLink>
       ) : null}
 
       <div className="flex items-center">

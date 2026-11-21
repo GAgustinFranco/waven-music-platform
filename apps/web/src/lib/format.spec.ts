@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   describeDuration,
   formatDuration,
+  formatMonthYear,
   formatTotalDuration,
+  initialsOf,
   pluralize,
   releaseYear,
 } from './format';
@@ -56,5 +58,26 @@ describe('pluralize', () => {
     expect(pluralize(1, 'track')).toBe('1 track');
     expect(pluralize(0, 'track')).toBe('0 tracks');
     expect(pluralize(12, 'album')).toBe('12 albums');
+  });
+});
+
+describe('initialsOf', () => {
+  it.each([
+    ['Ada Lovelace', 'AL'],
+    ['  grace   brewster murray hopper ', 'GB'],
+    ['Prince', 'P'],
+    ['', ''],
+  ])('%j → %j', (name, expected) => {
+    expect(initialsOf(name)).toBe(expected);
+  });
+});
+
+describe('formatMonthYear', () => {
+  it('formats a timestamp as month and year', () => {
+    expect(formatMonthYear('2026-11-15T12:00:00.000Z')).toBe('November 2026');
+  });
+
+  it('returns null for an invalid timestamp', () => {
+    expect(formatMonthYear('not a date')).toBeNull();
   });
 });

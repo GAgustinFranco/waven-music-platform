@@ -120,7 +120,8 @@ waven-music-platform/
 |---|---|---|
 | `--bg` | `#0B0B10` | App background |
 | `--surface` / `--surface-2` / `--elevated` | `#14141C` / `#1C1C27` / `#252533` | Sidebar, cards, menus |
-| `--border` | `#2E2E3D` | Borders and dividers |
+| `--border` | `#2E2E3D` | Borders and dividers (decorative) |
+| `--border-strong` | `#70708A` | Form field outlines, ≥ 3:1 on every surface (WCAG 1.4.11) |
 | `--text` / `--text-muted` | `#F4F4F8` / `#A1A1B5` | Contrast ≥ 7:1 on `--surface` |
 | `--accent` / `--accent-hover` | `#8B7BFF` / `#A196FF` | "Wave violet" brand color, ~6:1 contrast on `--bg`. Text on top of it uses `--bg`. |
 | `--accent-2` | `#3DD9D6` | Brand gradients and visualizer |

@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { PrefetchLink } from '@/components/catalog/prefetch-link';
 import { CoverImage } from '@/components/catalog/cover-image';
 import { PlayCollectionButton } from '@/components/player/play-collection-button';
 import type { ImageSet, Track } from '@/lib/api/catalog';
@@ -87,12 +87,12 @@ export function TopResultCard({
         className="w-24 shadow-lg"
       />
       <div className="flex min-w-0 flex-col gap-1">
-        <Link
+        <PrefetchLink
           href={content.href}
           className="truncate text-3xl font-bold tracking-tight after:absolute after:inset-0 after:rounded-md"
         >
           {content.title}
-        </Link>
+        </PrefetchLink>
         <p className="text-muted-foreground truncate text-sm">
           <span className="text-foreground font-medium">{content.kind}</span>
           {content.subtitle ? ` · ${content.subtitle}` : null}
