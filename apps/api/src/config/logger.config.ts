@@ -5,7 +5,9 @@ import { type EnvironmentVariables, NodeEnv } from './env.validation.js';
 
 const REQUEST_ID_HEADER = 'x-request-id';
 
-export function buildLoggerParams(env: EnvironmentVariables): Params {
+export function buildLoggerParams(
+  env: Pick<EnvironmentVariables, 'LOG_LEVEL' | 'NODE_ENV'>,
+): Params {
   return {
     pinoHttp: {
       level: env.LOG_LEVEL,

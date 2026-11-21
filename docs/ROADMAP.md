@@ -23,7 +23,7 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - [x] `pnpm i && pnpm db:up && pnpm dev` starts web (3000) and api (4000).
 - [x] `/api/health` responds from the web.
 - [x] The API does not start if a required environment variable is missing.
-- [ ] CI is green on GitHub.
+- [x] CI is green on GitHub.
 
 ### Phase 1 — Authentication
 - User and RefreshToken entities with their migration.
@@ -32,11 +32,11 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Web: `/login` page, `auth.store`, redirect middleware and a minimal user menu.
 
 **Acceptance criteria**
-- [ ] End-to-end Google login works locally.
-- [ ] The refresh after 15 min is transparent.
-- [ ] Reusing a refresh token revokes the family (e2e test).
-- [ ] An admin endpoint returns 403 to a user (e2e test).
-- [ ] CI fails if `openapi.json` or `schema.ts` are out of date.
+- [x] End-to-end Google login works locally.
+- [x] The refresh after 15 min is transparent.
+- [x] Reusing a refresh token revokes the family (e2e test).
+- [x] An admin endpoint returns 403 to a user (e2e test).
+- [x] CI fails if `openapi.json` or `schema.ts` are out of date.
 
 ### Phase 2 — Catalog, storage, seed and streaming (backend only)
 - Artist, Album and Track entities with slugs; `StorageDriver` (local + s3); MediaService (ffmpeg 128/320, sharp for covers and dominant color) and in-process queue.

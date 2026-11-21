@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import { existsSync } from 'node:fs';
 import { DataSource } from 'typeorm';
-import { validateEnv } from '../config/env.validation.js';
 import { baseDatabaseOptions } from './database.options.js';
 
 // Used only by the TypeORM CLI, which runs against the compiled output in `dist`.
@@ -12,11 +11,15 @@ for (const file of ['.env', '../../.env']) {
   }
 }
 
-const env = validateEnv(process.env);
+// Only the database URL is needed here, so migrations do not require the OAuth or JWT secrets.
+const databaseUrl = process.env['DATABASE_URL'];
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is required to run migrations');
+}
 const root = import.meta.dirname.replaceAll('\\', '/');
 
 export default new DataSource({
-  ...baseDatabaseOptions(env.DATABASE_URL),
+  ...baseDatabaseOptions(databaseUrl),
   entities: [`${root}/../modules/**/*.entity.js`],
   migrations: [`${root}/migrations/*.js`],
 });

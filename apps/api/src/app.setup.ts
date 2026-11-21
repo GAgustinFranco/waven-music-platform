@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { type EnvironmentVariables } from './config/env.validation.js';
 
@@ -12,6 +13,7 @@ export function configureApp(app: NestExpressApplication): void {
   // The API sits behind the web proxy (and Render's proxy in production).
   app.set('trust proxy', 1);
   app.use(helmet());
+  app.use(cookieParser());
   app.enableCors({ origin: config.get('CORS_ORIGINS', { infer: true }) });
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
@@ -26,5 +28,7 @@ export function buildOpenApiConfig() {
     .setTitle('Waven API')
     .setDescription('Music streaming API')
     .setVersion('0.1.0')
+    .addBearerAuth()
+    .addCookieAuth('waven_refresh')
     .build();
 }

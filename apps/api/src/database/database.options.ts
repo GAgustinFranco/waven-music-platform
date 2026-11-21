@@ -8,5 +8,7 @@ export function baseDatabaseOptions(databaseUrl: string): DataSourceOptions {
     synchronize: false,
     migrationsRun: false,
     migrationsTableName: 'migrations',
+    // gen_random_uuid() is built into Postgres 13+, unlike uuid-ossp.
+    uuidExtension: 'pgcrypto',
   };
 }
