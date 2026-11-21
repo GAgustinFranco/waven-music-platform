@@ -145,6 +145,9 @@ export class HomeDto {
   @ApiProperty({ type: [TrackDto] })
   popularTracks: TrackDto[];
 
-  @ApiProperty({ type: [TrackDto], description: 'Empty until listening history exists.' })
+  @ApiProperty({
+    type: [TrackDto],
+    description: 'Your last distinct public tracks, latest play first (up to 10).',
+  })
   recentlyPlayed: TrackDto[];
 }

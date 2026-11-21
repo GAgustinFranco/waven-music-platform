@@ -1,10 +1,11 @@
 import { NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { type DataSource, type EntityManager } from 'typeorm';
+import { type DataSource, type EntityManager, type Repository } from 'typeorm';
+import { type CatalogMapper } from '../catalog/catalog.mapper.js';
 import { type CatalogService } from '../catalog/catalog.service.js';
-import { Track } from '../catalog/entities/track.entity.js';
+import { Track, TrackStatus } from '../catalog/entities/track.entity.js';
 import { type RecordPlayDto } from './history.dto.js';
 import { HistoryService, requiredPlayMs } from './history.service.js';
-import { PlayContext } from './play-history.entity.js';
+import { PlayContext, type PlayHistory } from './play-history.entity.js';
 
 const PLAY_ID = '5b0c6f4e-3c1a-4c3e-9a8e-2f6f1d7c9b10';
 const TRACK_ID = 'a1f3d3a4-7e0e-4b8e-8f3c-6f9e2c1d0b2a';
@@ -22,11 +23,35 @@ function setup(durationMs: number | null = 180_000, inserted: unknown[] = [{ id:
   const catalog = {
     findReadyTrack: vi.fn().mockResolvedValue({ id: TRACK_ID, durationMs } as Track),
   };
+  const rows: PlayHistory[] = [];
+  const builder = {
+    withDeleted: vi.fn().mockReturnThis(),
+    innerJoinAndSelect: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    andWhere: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockReturnThis(),
+    addOrderBy: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    getMany: vi.fn(() => Promise.resolve(rows)),
+  };
+  const history = { createQueryBuilder: vi.fn(() => builder) };
+  const mapper = { track: vi.fn((track: Track) => ({ id: track.id })) };
   const service = new HistoryService(
     catalog as unknown as CatalogService,
+    mapper as unknown as CatalogMapper,
     dataSource as unknown as DataSource,
+    history as unknown as Repository<PlayHistory>,
   );
-  return { service, manager, dataSource, catalog };
+  return { service, manager, dataSource, catalog, rows, builder };
+}
+
+function entry(id: string, track: Partial<Track> = {}): PlayHistory {
+  return {
+    id,
+    playedAt: new Date('2026-11-21T10:00:00.000Z'),
+    context: PlayContext.Search,
+    track: { id: TRACK_ID, status: TrackStatus.Ready, deletedAt: null, ...track } as Track,
+  } as PlayHistory;
 }
 
 const play = (msPlayed: number): RecordPlayDto => ({
@@ -104,5 +129,45 @@ describe('HistoryService', () => {
 
     await expect(service.record('user-1', play(60_000))).rejects.toBeInstanceOf(NotFoundException);
     expect(dataSource.transaction).not.toHaveBeenCalled();
+  });
+
+  describe('list', () => {
+    it('fetches one extra row and returns the last item of the page as the cursor', async () => {
+      const { service, rows, builder } = setup();
+      rows.push(entry('e1'), entry('e2'), entry('e3'));
+
+      const page = await service.list('user-1', 2);
+
+      expect(builder.limit).toHaveBeenCalledWith(3);
+      expect(builder.andWhere).not.toHaveBeenCalled();
+      expect(page.items.map((item) => item.id)).toEqual(['e1', 'e2']);
+      expect(page.nextCursor).toBe('e2');
+    });
+
+    it('has no cursor on the last page and filters after the given cursor', async () => {
+      const { service, rows, builder } = setup();
+      rows.push(entry('e3'));
+
+      const page = await service.list('user-1', 2, 'e2');
+
+      expect(builder.andWhere).toHaveBeenCalledWith(expect.stringContaining('<'), {
+        cursor: 'e2',
+      });
+      expect(page.nextCursor).toBeNull();
+    });
+
+    it('keeps deleted tracks as unavailable', async () => {
+      const { service, rows, builder } = setup();
+      rows.push(entry('e1', { deletedAt: new Date() }), entry('e2'));
+
+      const page = await service.list('user-1', 20);
+
+      expect(builder.withDeleted).toHaveBeenCalled();
+      expect(page.items.map((item) => item.available)).toEqual([false, true]);
+      expect(page.items[0]).toMatchObject({
+        playedAt: '2026-11-21T10:00:00.000Z',
+        context: PlayContext.Search,
+      });
+    });
   });
 });

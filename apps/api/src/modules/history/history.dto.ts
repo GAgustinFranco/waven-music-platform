@@ -1,5 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsUUID, Max, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { MAX_PAGE_SIZE } from '../../common/dto/pagination.dto.js';
+import { TrackDto } from '../catalog/dto/catalog.dto.js';
 import { PlayContext } from './play-history.entity.js';
 
 /** A day of listening; anything longer is a client bug. */
@@ -27,4 +30,52 @@ export class RecordPlayDto {
   @ApiProperty({ enum: PlayContext, enumName: 'PlayContext' })
   @IsEnum(PlayContext)
   context: PlayContext;
+}
+
+export class HistoryQueryDto {
+  @ApiPropertyOptional({ type: 'integer', minimum: 1, maximum: MAX_PAGE_SIZE, default: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(MAX_PAGE_SIZE)
+  limit = 20;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'The `nextCursor` of the previous page; omit it for the newest plays.',
+  })
+  @IsOptional()
+  @IsUUID()
+  cursor?: string;
+}
+
+export class HistoryEntryDto {
+  @ApiProperty({ format: 'uuid', description: 'One entry per play.' })
+  id: string;
+
+  @ApiProperty({ format: 'date-time' })
+  playedAt: string;
+
+  @ApiProperty({ enum: PlayContext, enumName: 'PlayContext' })
+  context: PlayContext;
+
+  @ApiProperty({ description: '`false` when the track was deleted or is not playable.' })
+  available: boolean;
+
+  @ApiProperty({ type: TrackDto })
+  track: TrackDto;
+}
+
+export class HistoryPageDto {
+  @ApiProperty({ type: [HistoryEntryDto], description: 'Newest play first.' })
+  items: HistoryEntryDto[];
+
+  @ApiProperty({
+    type: 'string',
+    format: 'uuid',
+    nullable: true,
+    description: 'Pass it as `cursor` for the next page; `null` on the last one.',
+  })
+  nextCursor: string | null;
 }
