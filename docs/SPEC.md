@@ -199,3 +199,10 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - Only single `bytes` ranges are honored; multi-range or malformed `Range` headers get the full file (200), as RFC 9110 allows.
 - "Recently played" on `/browse/home` is an empty list until listening history exists.
 - The Jamendo seed takes the most popular tracks (`order=popularity_total`) in the `mp32` format and stores the license name (for example `CC BY-NC-SA 3.0`) and the Jamendo track page as `attributionUrl`.
+- Design tokens live only in the `:root` block of `apps/web/src/app/globals.css`. shadcn/ui's semantic variables point at them; because shadcn uses `accent` for hover surfaces, Tailwind's `accent` maps to `--elevated` and the brand violet is exposed as `brand`. Focus is a global `:focus-visible` outline (2 px `--accent`, 2 px offset).
+- Covers and artist images are plain responsive `<img>` elements (`srcSet` over the API's 64/300/640 px WebP files) instead of `next/image`, because the API already resizes them and the optimizer refuses private IPs in development.
+- An album's `dominantColor` reaches the CSS only as the `--dominant-color` variable and only if it is a 6-digit hex color. Artists have no color of their own, so their header borrows the first album color the API returns.
+- Catalog pages render on the client under `<Suspense>`: with Cache Components, route params and the pathname are request-time data. A malformed id or a 400/404 from the API shows a "not found" state; other errors show a retry button.
+- Track details (license and attribution link) open in a popover from an info button on every track row.
+- Search, Library and Premium are "Coming soon" pages until phases 6, 5 and 9, so the navigation is complete from the start.
+- The web runs unit tests with Vitest (the same version as the API) for pure helpers; component tests are not set up yet.
