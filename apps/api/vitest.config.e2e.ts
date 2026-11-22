@@ -37,6 +37,11 @@ export default defineConfig({
       STREAM_TOKEN_SECRET: 'test-stream-secret-that-is-at-least-32-chars',
       STREAM_TOKEN_TTL: '3600',
       MEDIA_CONCURRENCY: '2',
+      PAYMENT_MODE: 'preapproval',
+      MP_ACCESS_TOKEN: '',
+      MP_WEBHOOK_SECRET: 'test-webhook-secret',
+      MP_PUBLIC_URL: 'https://tunnel.waven.test',
+      MP_TEST_PAYER_EMAIL: '',
     },
   },
 });

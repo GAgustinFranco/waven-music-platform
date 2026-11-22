@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { type EnvironmentVariables } from '../../config/env.validation.js';
 import { type AuthUser } from '../auth/auth.types.js';
 import { CatalogService } from '../catalog/catalog.service.js';
-import { getEffectivePlan, PLAN_LIMITS, StreamQuality } from '../users/plan.js';
+import { PlanService } from '../billing/plan.service.js';
+import { PLAN_LIMITS, StreamQuality } from '../users/plan.js';
 import { type StreamUrlDto } from './stream.dto.js';
 import { StreamTokenService } from './stream-token.service.js';
 
@@ -20,6 +21,7 @@ export class StreamingService {
   constructor(
     private readonly catalog: CatalogService,
     private readonly tokens: StreamTokenService,
+    private readonly plans: PlanService,
     config: ConfigService<EnvironmentVariables, true>,
   ) {
     this.baseUrl = config.get('STREAM_BASE_URL', { infer: true }).replace(/\/+$/, '');
@@ -28,7 +30,7 @@ export class StreamingService {
   /** SPEC §6.3: the quality is fixed from the plan when the token is issued. */
   async issue(user: AuthUser, trackId: string): Promise<StreamUrlDto> {
     const track = await this.catalog.findReadyTrack(trackId);
-    const quality = PLAN_LIMITS[getEffectivePlan()].streamQuality;
+    const quality = PLAN_LIMITS[await this.plans.getPlan(user.id)].streamQuality;
     const { token, expiresAt } = this.tokens.sign({ userId: user.id, trackId: track.id, quality });
     return {
       url: `${this.baseUrl}/stream/${track.id}?token=${encodeURIComponent(token)}`,

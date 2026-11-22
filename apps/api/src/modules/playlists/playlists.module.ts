@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BillingModule } from '../billing/billing.module.js';
 import { CatalogModule } from '../catalog/catalog.module.js';
 import { PlaylistTrack } from './playlist-track.entity.js';
 import { Playlist } from './playlist.entity.js';
@@ -7,7 +8,7 @@ import { MyPlaylistsController, PlaylistsController } from './playlists.controll
 import { PlaylistsService } from './playlists.service.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Playlist, PlaylistTrack]), CatalogModule],
+  imports: [TypeOrmModule.forFeature([Playlist, PlaylistTrack]), CatalogModule, BillingModule],
   controllers: [MyPlaylistsController, PlaylistsController],
   providers: [PlaylistsService],
 })

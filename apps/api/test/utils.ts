@@ -1,5 +1,5 @@
 import { type NestExpressApplication } from '@nestjs/platform-express';
-import { Test } from '@nestjs/testing';
+import { Test, type TestingModuleBuilder } from '@nestjs/testing';
 import request from 'supertest';
 import { type App } from 'supertest/types.js';
 import { DataSource } from 'typeorm';
@@ -15,10 +15,15 @@ export interface TestApp {
   server: App;
 }
 
-/** Boots the real AppModule. Import it lazily so a test can tweak env vars first. */
-export async function createTestApp(): Promise<TestApp> {
+/**
+ * Boots the real AppModule. Import it lazily so a test can tweak env vars first;
+ * `customize` can override providers (for example, a fake payment provider).
+ */
+export async function createTestApp(
+  customize: (builder: TestingModuleBuilder) => TestingModuleBuilder = (builder) => builder,
+): Promise<TestApp> {
   const { AppModule } = await import('../src/app.module.js');
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  const moduleRef = await customize(Test.createTestingModule({ imports: [AppModule] })).compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app);
   await app.init();
@@ -28,7 +33,9 @@ export async function createTestApp(): Promise<TestApp> {
 export async function resetDatabase(app: NestExpressApplication): Promise<void> {
   await app
     .get(DataSource)
-    .query('TRUNCATE TABLE "tracks", "albums", "artists", "refresh_tokens", "users" CASCADE');
+    .query(
+      'TRUNCATE TABLE "tracks", "albums", "artists", "refresh_tokens", "users", "webhook_events" CASCADE',
+    );
 }
 
 /** Reads one cookie value from a response's `Set-Cookie` headers. */

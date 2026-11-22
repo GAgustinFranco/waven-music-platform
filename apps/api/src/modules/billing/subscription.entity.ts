@@ -81,6 +81,10 @@ export class Subscription {
   @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true })
   cancelledAt: Date | null;
 
+  /** `onetime` mode: the last payment that extended the period, so it never counts twice. */
+  @Column({ name: 'last_payment_id', type: 'varchar', length: 255, nullable: true })
+  lastPaymentId: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

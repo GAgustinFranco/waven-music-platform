@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSessionReady } from '@/features/auth/use-session-ready';
+import { SubscriptionCard } from '@/features/billing/subscription-card';
 import type { Me } from '@/lib/api/client';
 import { myPlaylistsQuery } from '@/lib/api/library';
 import { meQuery } from '@/lib/api/queries';
@@ -69,6 +70,7 @@ export function ProfileView() {
         {/* Remounted after each save, so the field restarts from the saved name. */}
         <DisplayNameForm key={user.displayName} me={user} />
         <PlanCard me={user} playlistCount={playlists.data ? playlists.data.total : null} />
+        <SubscriptionCard enabled={ready} />
       </div>
     </div>
   );

@@ -112,10 +112,10 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Web: plans page, redirect to checkout, `/billing/return` with polling, subscription management and a Premium badge.
 
 **Acceptance criteria**
-- [ ] The end-to-end sandbox payment enables Premium and high quality.
-- [ ] A duplicate webhook changes nothing (e2e test).
-- [ ] An invalid signature returns 401.
-- [ ] Switching to `PAYMENT_MODE=onetime` works without touching the domain.
+- [x] The end-to-end sandbox payment enables Premium and high quality.
+- [x] A duplicate webhook changes nothing (e2e test).
+- [x] An invalid signature returns 401.
+- [x] Switching to `PAYMENT_MODE=onetime` works without touching the domain.
 
 ### Phase 10 — Hardening, deployment and README
 - Playwright tests of the main journey in CI.
