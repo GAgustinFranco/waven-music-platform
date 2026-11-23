@@ -68,6 +68,105 @@ export interface paths {
         patch: operations["AdminUsersController_changeRole"];
         trace?: never;
     };
+    "/billing/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BillingController_plans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Creates a pending subscription and returns the checkout URL. */
+        post: operations["BillingController_checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BillingController_subscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing/subscription/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancels the open subscription; the paid period is kept. */
+        post: operations["BillingController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/mercadopago": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mercado Pago notifications, signed with `x-signature` (no JWT). */
+        post: operations["WebhooksController_mercadoPago"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdminSubscriptionsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/google": {
         parameters: {
             query?: never;
@@ -580,22 +679,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/subscriptions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["AdminSubscriptionsController_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/stats": {
         parameters: {
             query?: never;
@@ -670,6 +753,97 @@ export interface components {
         };
         UpdateUserRoleDto: {
             role: components["schemas"]["Role"];
+        };
+        /**
+         * @description `preapproval` renews every month; `onetime` buys 30 days per payment.
+         * @enum {string}
+         */
+        PaymentMode: "preapproval" | "onetime";
+        PlanOfferDto: {
+            id: components["schemas"]["Plan"];
+            /** @example Premium */
+            name: string;
+            /** @description In major units; 0 for Free. */
+            amount: number;
+            /** @example ARS */
+            currency: string;
+            /** @description Days paid by one charge; `null` for Free. */
+            periodDays: number | null;
+            limits: components["schemas"]["PlanLimitsDto"];
+        };
+        PlansDto: {
+            /** @description `preapproval` renews every month; `onetime` buys 30 days per payment. */
+            mode: components["schemas"]["PaymentMode"];
+            items: components["schemas"]["PlanOfferDto"][];
+        };
+        CheckoutDto: {
+            /**
+             * Format: uri
+             * @description Mercado Pago checkout to send the browser to.
+             */
+            redirectUrl: string;
+        };
+        /** @enum {string} */
+        SubscriptionStatus: "pending" | "authorized" | "paused" | "cancelled";
+        SubscriptionDto: {
+            /** Format: uuid */
+            id: string;
+            mode: components["schemas"]["PaymentMode"];
+            status: components["schemas"]["SubscriptionStatus"];
+            /** @description In major units (for example, 2999.00 ARS). */
+            amount: number;
+            /** @example ARS */
+            currency: string;
+            /**
+             * Format: date-time
+             * @description End of the paid period: the next charge (preapproval) or the pass end (onetime).
+             */
+            currentPeriodEnd: string | null;
+            /** Format: date-time */
+            cancelledAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        BillingStatusDto: {
+            /** @description Effective plan (business rule 1). */
+            plan: components["schemas"]["Plan"];
+            /** @description The newest subscription, whatever its status. */
+            subscription: components["schemas"]["SubscriptionDto"] | null;
+        };
+        WebhookAckDto: {
+            /** @enum {string} */
+            result: "processed" | "duplicate" | "ignored";
+        };
+        SubscriptionUserDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+            displayName: string;
+        };
+        AdminSubscriptionDto: {
+            /** Format: uuid */
+            id: string;
+            user: components["schemas"]["SubscriptionUserDto"];
+            provider: string;
+            mode: components["schemas"]["PaymentMode"];
+            status: components["schemas"]["SubscriptionStatus"];
+            /** @description In major units (for example, 2999.00 ARS). */
+            amount: number;
+            /** @example ARS */
+            currency: string;
+            /** Format: date-time */
+            currentPeriodEnd: string | null;
+            /** Format: date-time */
+            cancelledAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminSubscriptionPageDto: {
+            items: components["schemas"]["AdminSubscriptionDto"][];
+            total: number;
+            limit: number;
+            offset: number;
         };
         AccessTokenDto: {
             /** @description Short-lived JWT. Keep it in memory only. */
@@ -1036,41 +1210,6 @@ export interface components {
             /** @description The best hit across types; only with `type=all`. */
             topResult: components["schemas"]["TopResultDto"] | null;
         };
-        /** @enum {string} */
-        SubscriptionStatus: "pending" | "authorized" | "paused" | "cancelled";
-        SubscriptionUserDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: email */
-            email: string;
-            displayName: string;
-        };
-        /** @enum {string} */
-        PaymentMode: "preapproval" | "onetime";
-        AdminSubscriptionDto: {
-            /** Format: uuid */
-            id: string;
-            user: components["schemas"]["SubscriptionUserDto"];
-            provider: string;
-            mode: components["schemas"]["PaymentMode"];
-            status: components["schemas"]["SubscriptionStatus"];
-            /** @description In major units (for example, 2999.00 ARS). */
-            amount: number;
-            /** @example ARS */
-            currency: string;
-            /** Format: date-time */
-            currentPeriodEnd: string | null;
-            /** Format: date-time */
-            cancelledAt: string | null;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        AdminSubscriptionPageDto: {
-            items: components["schemas"]["AdminSubscriptionDto"][];
-            total: number;
-            limit: number;
-            offset: number;
-        };
         UserStatsDto: {
             total: number;
             admins: number;
@@ -1327,6 +1466,210 @@ export interface operations {
             };
             /** @description `CANNOT_DEMOTE_SELF` */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BillingController_plans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlansDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BillingController_checkout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `SUBSCRIPTION_EXISTS`: one is pending, authorized or paused. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `PAYMENT_PROVIDER_ERROR`. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `BILLING_UNAVAILABLE`: no credentials. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BillingController_subscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingStatusDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BillingController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingStatusDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `SUBSCRIPTION_NOT_FOUND`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `PAYMENT_PROVIDER_ERROR`. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WebhooksController_mercadoPago: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAckDto"];
+                };
+            };
+            /** @description `WEBHOOK_SIGNATURE_INVALID`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AdminSubscriptionsController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                /** @description Case-insensitive substring match. */
+                q?: string;
+                status?: components["schemas"]["SubscriptionStatus"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSubscriptionPageDto"];
+                };
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The user is not an admin. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3134,45 +3477,6 @@ export interface operations {
             };
             /** @description Missing or invalid access token. */
             401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AdminSubscriptionsController_list: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-                /** @description Case-insensitive substring match. */
-                q?: string;
-                status?: components["schemas"]["SubscriptionStatus"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminSubscriptionPageDto"];
-                };
-            };
-            /** @description Missing or invalid access token. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description The user is not an admin. */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };

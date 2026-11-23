@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { ComingSoon } from '@/components/layout/coming-soon';
+import { PremiumView } from '@/features/billing/premium-view';
 
 export const metadata: Metadata = { title: 'Premium' };
 
 export default function PremiumPage() {
-  return <ComingSoon title="Premium" description="Higher-quality audio and unlimited playlists." />;
+  return <PremiumView />;
 }

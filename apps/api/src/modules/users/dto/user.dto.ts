@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { SearchPageQueryDto } from '../../../common/dto/pagination.dto.js';
-import { PLAN_LIMITS, Plan, StreamQuality, getEffectivePlan } from '../plan.js';
+import { PLAN_LIMITS, Plan, StreamQuality } from '../plan.js';
 import { Role, type User } from '../user.entity.js';
 
 export class PlanLimitsDto {
@@ -51,8 +51,7 @@ export class MeDto extends UserDto {
   @ApiProperty({ type: PlanLimitsDto })
   limits: PlanLimitsDto;
 
-  static override from(user: User): MeDto {
-    const plan = getEffectivePlan();
+  static fromUser(user: User, plan: Plan): MeDto {
     return { ...UserDto.from(user), plan, limits: { ...PLAN_LIMITS[plan] } };
   }
 }

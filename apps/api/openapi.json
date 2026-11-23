@@ -262,6 +262,236 @@
         ]
       }
     },
+    "/billing/plans": {
+      "get": {
+        "operationId": "BillingController_plans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlansDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/checkout": {
+      "post": {
+        "operationId": "BillingController_checkout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "409": {
+            "description": "`SUBSCRIPTION_EXISTS`: one is pending, authorized or paused."
+          },
+          "502": {
+            "description": "`PAYMENT_PROVIDER_ERROR`."
+          },
+          "503": {
+            "description": "`BILLING_UNAVAILABLE`: no credentials."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creates a pending subscription and returns the checkout URL.",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/subscription": {
+      "get": {
+        "operationId": "BillingController_subscription",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/subscription/cancel": {
+      "post": {
+        "operationId": "BillingController_cancel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "404": {
+            "description": "`SUBSCRIPTION_NOT_FOUND`."
+          },
+          "502": {
+            "description": "`PAYMENT_PROVIDER_ERROR`."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancels the open subscription; the paid period is kept.",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/webhooks/mercadopago": {
+      "post": {
+        "operationId": "WebhooksController_mercadoPago",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAckDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`WEBHOOK_SIGNATURE_INVALID`."
+          }
+        },
+        "summary": "Mercado Pago notifications, signed with `x-signature` (no JWT).",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/admin/subscriptions": {
+      "get": {
+        "operationId": "AdminSubscriptionsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive substring match.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SubscriptionStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSubscriptionPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "403": {
+            "description": "The user is not an admin."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/auth/google": {
       "get": {
         "operationId": "AuthController_google",
@@ -2336,78 +2566,6 @@
         ]
       }
     },
-    "/admin/subscriptions": {
-      "get": {
-        "operationId": "AdminSubscriptionsController_list",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 50,
-              "default": 20,
-              "type": "integer"
-            }
-          },
-          {
-            "name": "offset",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "default": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "name": "q",
-            "required": false,
-            "in": "query",
-            "description": "Case-insensitive substring match.",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/SubscriptionStatus"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminSubscriptionPageDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid access token."
-          },
-          "403": {
-            "description": "The user is not an admin."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "admin"
-        ]
-      }
-    },
     "/admin/stats": {
       "get": {
         "operationId": "AdminStatsController_get",
@@ -2682,6 +2840,308 @@
         },
         "required": [
           "role"
+        ]
+      },
+      "PaymentMode": {
+        "type": "string",
+        "enum": [
+          "preapproval",
+          "onetime"
+        ],
+        "description": "`preapproval` renews every month; `onetime` buys 30 days per payment."
+      },
+      "PlanOfferDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "example": "Premium"
+          },
+          "amount": {
+            "type": "number",
+            "description": "In major units; 0 for Free."
+          },
+          "currency": {
+            "type": "string",
+            "example": "ARS"
+          },
+          "periodDays": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Days paid by one charge; `null` for Free."
+          },
+          "limits": {
+            "$ref": "#/components/schemas/PlanLimitsDto"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "amount",
+          "currency",
+          "periodDays",
+          "limits"
+        ]
+      },
+      "PlansDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "description": "`preapproval` renews every month; `onetime` buys 30 days per payment.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMode"
+              }
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanOfferDto"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "items"
+        ]
+      },
+      "CheckoutDto": {
+        "type": "object",
+        "properties": {
+          "redirectUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Mercado Pago checkout to send the browser to."
+          }
+        },
+        "required": [
+          "redirectUrl"
+        ]
+      },
+      "SubscriptionStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "authorized",
+          "paused",
+          "cancelled"
+        ]
+      },
+      "SubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMode"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionStatus"
+              }
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "description": "In major units (for example, 2999.00 ARS)."
+          },
+          "currency": {
+            "type": "string",
+            "example": "ARS"
+          },
+          "currentPeriodEnd": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "End of the paid period: the next charge (preapproval) or the pass end (onetime)."
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "mode",
+          "status",
+          "amount",
+          "currency",
+          "currentPeriodEnd",
+          "cancelledAt",
+          "createdAt"
+        ]
+      },
+      "BillingStatusDto": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "description": "Effective plan (business rule 1).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
+          "subscription": {
+            "nullable": true,
+            "description": "The newest subscription, whatever its status.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "plan",
+          "subscription"
+        ]
+      },
+      "WebhookAckDto": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "processed",
+              "duplicate",
+              "ignored"
+            ]
+          }
+        },
+        "required": [
+          "result"
+        ]
+      },
+      "SubscriptionUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName"
+        ]
+      },
+      "AdminSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SubscriptionUserDto"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "mode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMode"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionStatus"
+              }
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "description": "In major units (for example, 2999.00 ARS)."
+          },
+          "currency": {
+            "type": "string",
+            "example": "ARS"
+          },
+          "currentPeriodEnd": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "user",
+          "provider",
+          "mode",
+          "status",
+          "amount",
+          "currency",
+          "currentPeriodEnd",
+          "cancelledAt",
+          "createdAt"
+        ]
+      },
+      "AdminSubscriptionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminSubscriptionDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
         ]
       },
       "AccessTokenDto": {
@@ -3989,132 +4449,6 @@
           "albums",
           "artists",
           "topResult"
-        ]
-      },
-      "SubscriptionStatus": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "authorized",
-          "paused",
-          "cancelled"
-        ]
-      },
-      "SubscriptionUserDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "displayName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "displayName"
-        ]
-      },
-      "PaymentMode": {
-        "type": "string",
-        "enum": [
-          "preapproval",
-          "onetime"
-        ]
-      },
-      "AdminSubscriptionDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "user": {
-            "$ref": "#/components/schemas/SubscriptionUserDto"
-          },
-          "provider": {
-            "type": "string"
-          },
-          "mode": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaymentMode"
-              }
-            ]
-          },
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SubscriptionStatus"
-              }
-            ]
-          },
-          "amount": {
-            "type": "number",
-            "description": "In major units (for example, 2999.00 ARS)."
-          },
-          "currency": {
-            "type": "string",
-            "example": "ARS"
-          },
-          "currentPeriodEnd": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "cancelledAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "user",
-          "provider",
-          "mode",
-          "status",
-          "amount",
-          "currency",
-          "currentPeriodEnd",
-          "cancelledAt",
-          "createdAt"
-        ]
-      },
-      "AdminSubscriptionPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminSubscriptionDto"
-            }
-          },
-          "total": {
-            "type": "number"
-          },
-          "limit": {
-            "type": "number"
-          },
-          "offset": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "limit",
-          "offset"
         ]
       },
       "UserStatsDto": {

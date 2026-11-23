@@ -16,6 +16,7 @@ import {
   ValidateIf,
   validateSync,
 } from 'class-validator';
+import { PaymentMode } from '../modules/billing/subscription.entity.js';
 
 export enum NodeEnv {
   Development = 'development',
@@ -183,6 +184,40 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   FFMPEG_PATH?: string;
+
+  /** `preapproval` (monthly subscription) or `onetime` (Checkout Pro, 30 days per payment). */
+  @IsEnum(PaymentMode)
+  PAYMENT_MODE: PaymentMode = PaymentMode.Preapproval;
+
+  /** Seller access token. Checkout answers 503 while it is missing. */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  MP_ACCESS_TOKEN?: string;
+
+  /** Secret signature of the webhook (Your integrations → Webhooks). Without it every webhook gets 401. */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  MP_WEBHOOK_SECRET?: string;
+
+  /** Public https origin of the web (a tunnel in dev); Mercado Pago sends the buyer back there. */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsUrl({ require_tld: false, require_protocol: true })
+  MP_PUBLIC_URL?: string;
+
+  /** Sandbox only: the test buyer's email, which Mercado Pago requires as the payer. */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsEmail()
+  MP_TEST_PAYER_EMAIL?: string;
+
+  /** Mercado Pago API origin. */
+  @IsUrl({ require_tld: false, require_protocol: true })
+  MP_API_URL = 'https://api.mercadopago.com';
 }
 
 /**

@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { type DataSource, type EntityManager, type Repository } from 'typeorm';
+import { type PlanService } from '../billing/plan.service.js';
 import { type CatalogMapper } from '../catalog/catalog.mapper.js';
 import { PLAN_LIMITS, Plan } from '../users/plan.js';
 import { Playlist } from './playlist.entity.js';
@@ -70,6 +71,7 @@ describe('PlaylistsService.create', () => {
       {} as Repository<Playlist>,
       dataSource as unknown as DataSource,
       { track: vi.fn(), imageSet: vi.fn() } as unknown as CatalogMapper,
+      { getPlan: vi.fn().mockResolvedValue(Plan.Free) } as unknown as PlanService,
     );
     return { service, manager };
   }

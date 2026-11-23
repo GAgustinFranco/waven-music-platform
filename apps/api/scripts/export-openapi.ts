@@ -21,6 +21,11 @@ const FIXED_ENV: Record<string, string> = {
   E2E_AUTH_BYPASS: 'false',
   STORAGE_DRIVER: 'local',
   STREAM_TOKEN_SECRET: 'openapi-export-placeholder-secret-0000',
+  PAYMENT_MODE: 'preapproval',
+  MP_ACCESS_TOKEN: '',
+  MP_WEBHOOK_SECRET: '',
+  MP_PUBLIC_URL: '',
+  MP_TEST_PAYER_EMAIL: '',
 };
 Object.assign(process.env, FIXED_ENV);
 

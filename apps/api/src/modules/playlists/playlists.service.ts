@@ -9,7 +9,8 @@ import { DataSource, type EntityManager, In, Repository } from 'typeorm';
 import { CatalogMapper } from '../catalog/catalog.mapper.js';
 import { type ImageSetDto } from '../catalog/dto/catalog.dto.js';
 import { isTrackAvailable, Track, TrackStatus } from '../catalog/entities/track.entity.js';
-import { getEffectivePlan, PLAN_LIMITS } from '../users/plan.js';
+import { PlanService } from '../billing/plan.service.js';
+import { PLAN_LIMITS } from '../users/plan.js';
 import { PlaylistTrack } from './playlist-track.entity.js';
 import { Playlist } from './playlist.entity.js';
 import {
@@ -51,6 +52,7 @@ export class PlaylistsService {
     @InjectRepository(Playlist) private readonly playlists: Repository<Playlist>,
     private readonly dataSource: DataSource,
     private readonly mapper: CatalogMapper,
+    private readonly plans: PlanService,
   ) {}
 
   async list(ownerId: string, limit: number, offset: number): Promise<PlaylistPageDto> {
@@ -76,7 +78,7 @@ export class PlaylistsService {
   }
 
   async create(ownerId: string, dto: CreatePlaylistDto): Promise<PlaylistDetailDto> {
-    const { maxPlaylists } = PLAN_LIMITS[getEffectivePlan()];
+    const { maxPlaylists } = PLAN_LIMITS[await this.plans.getPlan(ownerId)];
     const playlist = await this.dataSource.transaction(async (manager) => {
       // Serializes creations per user, so two parallel requests cannot both pass the limit.
       await manager.query('SELECT 1 FROM "users" WHERE "id" = $1 FOR UPDATE', [ownerId]);
