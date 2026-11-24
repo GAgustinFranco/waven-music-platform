@@ -183,11 +183,90 @@
   --glow: rgb(255 255 255 / 7%);
 }
 
-/* Dynamic: the violet base with the accent and glow of the album playing (set from JS). */
+/*
+ * Dynamic: the whole palette comes from the cover playing (set from JS on <html>).
+ * Registered as colors so they can transition; the initial values are Midnight Violet.
+ */
+@property --dynamic-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0b0b10;
+}
+@property --dynamic-surface {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #14141c;
+}
+@property --dynamic-surface-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1c1c27;
+}
+@property --dynamic-elevated {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #252533;
+}
+@property --dynamic-border {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2e2e3d;
+}
+@property --dynamic-border-strong {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #70708a;
+}
+@property --dynamic-text-muted {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #a1a1b5;
+}
+@property --dynamic-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #8b7bff;
+}
+@property --dynamic-accent-hover {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #a196ff;
+}
+@property --dynamic-accent-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #3dd9d6;
+}
+@property --dynamic-glow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgb(139 123 255 / 20%);
+}
+
 [data-theme='dynamic'] {
-  --accent: var(--dynamic-accent, #8b7bff);
-  --accent-hover: var(--dynamic-accent, #a196ff);
-  --glow: var(--dynamic-glow, rgb(139 123 255 / 20%));
+  --bg: var(--dynamic-bg);
+  --surface: var(--dynamic-surface);
+  --surface-2: var(--dynamic-surface-2);
+  --elevated: var(--dynamic-elevated);
+  --border: var(--dynamic-border);
+  --border-strong: var(--dynamic-border-strong);
+  --text-muted: var(--dynamic-text-muted);
+  --accent: var(--dynamic-accent);
+  --accent-hover: var(--dynamic-accent-hover);
+  --accent-2: var(--dynamic-accent-2);
+  --scrim: color-mix(in srgb, var(--dynamic-bg) 80%, transparent);
+  --glow: var(--dynamic-glow);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme='dynamic'] {
+    transition-property:
+      --dynamic-bg, --dynamic-surface, --dynamic-surface-2, --dynamic-elevated, --dynamic-border,
+      --dynamic-border-strong, --dynamic-text-muted, --dynamic-accent, --dynamic-accent-hover,
+      --dynamic-accent-2, --dynamic-glow;
+    transition-duration: 700ms;
+    transition-timing-function: var(--motion-ease);
+  }
 }
 
 [data-theme] {
@@ -284,6 +363,16 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Every control reacts the same way: pointer cursor and a short, eased transition. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+  :where(button, a, [role='button']) {
+    transition-property: color, background-color, border-color, box-shadow, opacity, scale;
+    transition-duration: 150ms;
+    transition-timing-function: var(--motion-ease);
   }
   html[data-backdrop='glow'] body {
     background-image: radial-gradient(1100px 520px at 70% -12%, var(--glow), transparent 70%);

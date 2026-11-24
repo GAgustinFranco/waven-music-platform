@@ -62,11 +62,15 @@ function SidebarNav({ pathname }: { pathname: string | null }) {
                   active
                     ? 'bg-surface-2 text-foreground'
                     : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground',
+                  'group',
                 )}
               >
                 <Icon
                   aria-hidden="true"
-                  className={cn('size-6 shrink-0', active && 'text-brand')}
+                  className={cn(
+                    'size-6 shrink-0 transition-colors duration-150',
+                    active ? 'text-brand' : 'group-hover:text-brand',
+                  )}
                 />
                 <span className="max-lg:sr-only">{label}</span>
               </Link>

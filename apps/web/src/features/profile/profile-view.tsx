@@ -21,7 +21,8 @@ import { useUpdateMe } from './use-update-me';
 
 const FIELD =
   'bg-surface-2 border-input text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm';
-const CARD = 'bg-surface flex flex-col gap-4 rounded-lg p-5 sm:p-6';
+const CARD =
+  'bg-surface flex flex-col gap-4 rounded-lg p-5 sm:p-6 border border-transparent transition-[border-color,box-shadow] duration-200 ease-standard hover:border-foreground/12 hover:shadow-lg hover:shadow-black/30 focus-within:border-foreground/12';
 
 /** Profile and plan (US-02): edit the display name and see the plan and its limits. */
 export function ProfileView() {

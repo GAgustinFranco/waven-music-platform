@@ -56,7 +56,7 @@ export function SubscriptionCard({ enabled }: { enabled: boolean }) {
   return (
     <section
       aria-labelledby={`${id}-title`}
-      className="bg-surface flex flex-col gap-4 rounded-lg p-5 sm:p-6 lg:col-span-2"
+      className="bg-surface flex flex-col gap-4 rounded-lg p-5 sm:p-6 lg:col-span-2 border border-transparent transition-[border-color,box-shadow] duration-200 ease-standard hover:border-foreground/12 hover:shadow-lg hover:shadow-black/30 focus-within:border-foreground/12"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id={`${id}-title`} className="flex items-center gap-2 text-xl font-semibold">

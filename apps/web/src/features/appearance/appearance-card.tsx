@@ -9,7 +9,8 @@ import { useUpdateMe } from '@/features/profile/use-update-me';
 import type { Me } from '@/lib/api/client';
 import { BACKDROP_OPTIONS, type Backdrop, type Theme, THEME_OPTIONS } from '@/lib/theme';
 
-const CARD = 'bg-surface flex flex-col gap-5 rounded-lg p-5 sm:p-6 lg:col-span-2';
+const CARD =
+  'bg-surface flex flex-col gap-5 rounded-lg p-5 sm:p-6 lg:col-span-2 border border-transparent transition-[border-color,box-shadow] duration-200 ease-standard hover:border-foreground/12 hover:shadow-lg hover:shadow-black/30 focus-within:border-foreground/12';
 
 /**
  * Theme and backdrop picker (Premium). Each preview is a small mock of the app
@@ -105,7 +106,7 @@ export function AppearanceCard({ me }: { me: Me }) {
                 className={
                   selected
                     ? 'bg-brand text-primary-foreground inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold'
-                    : 'border-input inline-flex h-10 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold'
+                    : 'border-input hover:bg-foreground/8 hover:border-foreground/40 inline-flex h-10 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold'
                 }
               >
                 {locked ? <Lock aria-hidden="true" className="size-3.5" /> : null}

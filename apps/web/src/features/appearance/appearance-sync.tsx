@@ -3,18 +3,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { meQuery } from '@/lib/api/queries';
-import {
-  BACKDROP_OPTIONS,
-  type Backdrop,
-  glowFor,
-  readableAccent,
-  type Theme,
-  THEME_OPTIONS,
-} from '@/lib/theme';
+import { coverColor } from '@/lib/cover-color';
+import { type DynamicPalette, dynamicPalette } from '@/lib/palette';
+import { BACKDROP_OPTIONS, type Backdrop, type Theme, THEME_OPTIONS } from '@/lib/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { selectCurrentTrack, usePlayerStore } from '@/stores/player.store';
 
 const CACHE_KEY = 'waven-appearance';
+
+/** The CSS custom properties globals.css reads for the Dynamic theme. */
+const DYNAMIC_VARS: Record<keyof DynamicPalette, string> = {
+  bg: '--dynamic-bg',
+  surface: '--dynamic-surface',
+  surface2: '--dynamic-surface-2',
+  elevated: '--dynamic-elevated',
+  border: '--dynamic-border',
+  borderStrong: '--dynamic-border-strong',
+  textMuted: '--dynamic-text-muted',
+  accent: '--dynamic-accent',
+  accentHover: '--dynamic-accent-hover',
+  accent2: '--dynamic-accent-2',
+  glow: '--dynamic-glow',
+};
 
 interface CachedAppearance {
   theme: Theme;
@@ -53,8 +63,9 @@ function writeCachedAppearance(appearance: CachedAppearance): void {
 /**
  * Applies the effective appearance from `/me` to <html> (`data-theme`,
  * `data-backdrop`); the tokens in globals.css do the rest. With the Dynamic
- * theme the accent follows the dominant color of the album playing. Renders
- * nothing; leaving the app shell (admin, login) restores the default.
+ * theme the whole palette (surfaces, borders, accent and glow) is derived from
+ * the most vibrant color of the cover playing. Renders nothing; leaving the app
+ * shell (admin, login) restores the default.
  */
 export function AppearanceSync() {
   const status = useAuthStore((state) => state.status);
@@ -69,8 +80,10 @@ export function AppearanceSync() {
       writeCachedAppearance(me.appearance);
     }
   }, [me]);
+  const album = usePlayerStore((state) => selectCurrentTrack(state)?.album);
+  const coverUrl = album?.cover?.sm;
   // Queues saved before covers carried a color have no `dominantColor`.
-  const albumColor = usePlayerStore((state) => selectCurrentTrack(state)?.album.dominantColor);
+  const fallbackColor = album?.dominantColor;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -92,19 +105,44 @@ export function AppearanceSync() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const accent = theme === 'dynamic' ? readableAccent(albumColor) : null;
-    if (accent) {
-      root.style.setProperty('--dynamic-accent', accent);
-      root.style.setProperty('--dynamic-glow', glowFor(accent));
-    } else {
-      root.style.removeProperty('--dynamic-accent');
-      root.style.removeProperty('--dynamic-glow');
-    }
-    return () => {
-      root.style.removeProperty('--dynamic-accent');
-      root.style.removeProperty('--dynamic-glow');
+    const clear = () => {
+      for (const name of Object.values(DYNAMIC_VARS)) {
+        root.style.removeProperty(name);
+      }
     };
-  }, [theme, albumColor]);
+    if (theme !== 'dynamic') {
+      clear();
+      return clear;
+    }
+    let cancelled = false;
+    void coverColor(coverUrl, fallbackColor).then((color) => {
+      if (cancelled) {
+        return;
+      }
+      if (!color) {
+        clear();
+        return;
+      }
+      const palette = dynamicPalette(color);
+      for (const [key, value] of Object.entries(palette)) {
+        root.style.setProperty(DYNAMIC_VARS[key as keyof DynamicPalette], value);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [theme, coverUrl, fallbackColor]);
+
+  // Leaving the app shell (admin, login) drops the Dynamic colors.
+  useEffect(
+    () => () => {
+      const root = document.documentElement;
+      for (const name of Object.values(DYNAMIC_VARS)) {
+        root.style.removeProperty(name);
+      }
+    },
+    [],
+  );
 
   return null;
 }
