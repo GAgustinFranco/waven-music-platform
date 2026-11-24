@@ -121,6 +121,14 @@ describe('Billing (e2e)', () => {
       .to('payer@waven.test')
       .filter((message) => message.subject === 'Welcome to Waven Premium');
 
+  /** In-app "You're on Premium" notifications, written in the activation's transaction. */
+  const premiumNotifications = async () =>
+    (
+      (await request(ctx.server).get('/notifications').set(fan).expect(200)).body as {
+        items: { type: string; data: { subscriptionId: string } | null }[];
+      }
+    ).items.filter((item) => item.type === 'premium-activated');
+
   const eventCount = async (): Promise<number> => {
     const rows: { count: string }[] = await ctx.app
       .get(DataSource)
@@ -229,6 +237,10 @@ describe('Billing (e2e)', () => {
     expect(stream.body.quality).toBe('high');
     await vi.waitFor(() => expect(premiumWelcomes()).toHaveLength(1));
     expect(premiumWelcomes()[0]?.text).toContain('switch between themes');
+    // Already there when the webhook answers: same transaction as the activation.
+    expect(await premiumNotifications()).toEqual([
+      expect.objectContaining({ data: { subscriptionId } }),
+    ]);
   });
 
   it('answers 200 to a duplicate event and changes nothing', async () => {
@@ -251,6 +263,7 @@ describe('Billing (e2e)', () => {
     expect(preapproval.fetches).toBe(fetches);
     expect(await status()).toEqual(before);
     expect(premiumWelcomes()).toHaveLength(1);
+    expect(await premiumNotifications()).toHaveLength(1);
   });
 
   it('ignores an invalid transition', async () => {
@@ -300,6 +313,7 @@ describe('Billing (e2e)', () => {
     // Still authorized: a refresh of an active subscription is not a new activation.
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(premiumWelcomes()).toHaveLength(1);
+    expect(await premiumNotifications()).toHaveLength(1);
   });
 
   it('ignores unknown resources and notification types', async () => {
@@ -362,5 +376,10 @@ describe('Billing (e2e)', () => {
     await status();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(premiumWelcomes()).toHaveLength(2);
+    const notifications = await premiumNotifications();
+    expect(notifications.map((item) => item.data?.subscriptionId)).toEqual([
+      pending?.id,
+      subscriptionId,
+    ]);
   });
 });

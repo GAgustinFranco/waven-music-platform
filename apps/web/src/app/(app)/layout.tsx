@@ -9,6 +9,7 @@ import { UserMenu } from '@/components/layout/user-menu';
 import { AppearanceSync } from '@/features/appearance/appearance-sync';
 import { SessionGate } from '@/features/auth/session-gate';
 import { LibraryProvider } from '@/features/library/library-provider';
+import { NotificationBell } from '@/features/notifications/notification-bell';
 import { PlayerEngine } from '@/features/player/player-engine';
 
 /**
@@ -38,7 +39,10 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
               <AudioLines aria-hidden="true" className="text-brand size-6" />
               Waven
             </Link>
-            <UserMenu />
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <UserMenu />
+            </div>
           </header>
           {/* Pages render their own header and sections; -mt-16 lets gradients reach the top. */}
           <main id="main" tabIndex={-1} className="-mt-16 flex flex-1 flex-col pb-8 outline-none">

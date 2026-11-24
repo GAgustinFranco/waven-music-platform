@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { User } from '../users/user.entity.js';
 import { AdminSubscriptionsController } from './admin-subscriptions.controller.js';
 import { BillingController, WebhooksController } from './billing.controller.js';
@@ -20,7 +21,7 @@ import { WebhooksService } from './webhooks.service.js';
  * `PlanService`, the single source of a user's effective plan.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([Subscription, WebhookEvent, User])],
+  imports: [TypeOrmModule.forFeature([Subscription, WebhookEvent, User]), NotificationsModule],
   controllers: [BillingController, WebhooksController, AdminSubscriptionsController],
   providers: [
     MercadoPagoClient,

@@ -19,6 +19,7 @@ import { BillingModule } from './modules/billing/billing.module.js';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './modules/auth/guards/roles.guard.js';
 import { MailModule } from './modules/mail/mail.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { CatalogModule } from './modules/catalog/catalog.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { StreamingModule } from './modules/streaming/streaming.module.js';
@@ -66,6 +67,7 @@ type AppConfigService = ConfigService<EnvironmentVariables, true>;
     }),
     HealthModule,
     MailModule,
+    NotificationsModule,
     UsersModule,
     AuthModule,
     StorageModule,
