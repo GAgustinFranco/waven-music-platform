@@ -8,7 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto.js';
 import { type AuthUser } from '../auth/auth.types.js';
-import { CurrentUser } from '../auth/decorators/auth.decorators.js';
+import { CurrentUser, Public } from '../auth/decorators/auth.decorators.js';
 import { CatalogService } from './catalog.service.js';
 import {
   AlbumDetailDto,
@@ -16,6 +16,7 @@ import {
   ArtistDetailDto,
   ArtistPageDto,
   HomeDto,
+  ShowcaseDto,
   TrackDto,
 } from './dto/catalog.dto.js';
 
@@ -87,5 +88,19 @@ export class BrowseController {
   @ApiOkResponse({ type: HomeDto, description: 'Recently played is per user.' })
   home(@CurrentUser() user: AuthUser): Promise<HomeDto> {
     return this.catalog.home(user.id);
+  }
+}
+
+/** Public, so the sign-in page can show the catalog before anyone signs in. */
+@ApiTags('catalog')
+@Public()
+@Controller('browse')
+export class ShowcaseController {
+  constructor(private readonly catalog: CatalogService) {}
+
+  @Get('showcase')
+  @ApiOkResponse({ type: ShowcaseDto, description: 'Up to 48 random public album covers.' })
+  showcase(): Promise<ShowcaseDto> {
+    return this.catalog.showcase();
   }
 }

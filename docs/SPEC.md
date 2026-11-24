@@ -6,7 +6,7 @@
 ## 1. Scope
 
 **Included**
-- Google login, session with JWT + refresh token, and an editable profile.
+- Google login or email and password, session with JWT + refresh token, and an editable profile.
 - Catalog of artists, albums and tracks, managed from an admin panel.
 - Authenticated streaming with HTTP Range, in two qualities (128 and 320 kbps).
 - Full player: queue, shuffle, repeat, volume, Media Session and keyboard shortcuts.
@@ -31,6 +31,7 @@
 
 **Account**
 - US-01 As a visitor, I want to sign in with Google so I can start listening without creating a password.
+- US-01b As a visitor without a Google account, I want to create an account with my email and a password, and sign in with them later.
 - US-02 As a user, I want to view and edit my display name, and see my current plan.
 - US-03 As a user, I want to sign out on this device.
 
@@ -65,7 +66,7 @@ All of them have `id uuid`, `createdAt` and `updatedAt` unless stated otherwise.
 
 | Entity | Key fields | Notes |
 |---|---|---|
-| **User** | googleId (unique), email (unique), displayName, avatarUrl, role (`user`\|`admin`) | The plan is **not** stored here: it is derived from Subscription. |
+| **User** | googleId (unique, nullable), passwordHash (nullable), email (unique), displayName, avatarUrl, role (`user`\|`admin`) | The plan is **not** stored here: it is derived from Subscription. A check constraint requires a Google id or a password. |
 | **RefreshToken** | userId, tokenHash, familyId, expiresAt, revokedAt, userAgent | Rotation with reuse detection per family. |
 | **Artist** | name, slug (unique), bio, imageKey | |
 | **Album** | artistId, title, slug (unique per artist), releaseDate, coverKey, dominantColor (hex) | The color is computed on the server when the cover is uploaded. |
@@ -87,6 +88,8 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 |---|---|---|---|
 | GET | `/auth/google` | public | Starts OAuth. |
 | GET | `/auth/google/callback` | public | Creates or updates the user, sets the refresh cookie and redirects to the web. |
+| POST | `/auth/register` | public + CSRF header | `{ email, password, displayName }` → 201 `{ accessToken }` and the refresh cookie. 409 `EMAIL_IN_USE`. |
+| POST | `/auth/login` | public + CSRF header | `{ email, password }` → `{ accessToken }` and the refresh cookie. 401 `INVALID_CREDENTIALS`. |
 | POST | `/auth/refresh` | cookie | Rotates the refresh token and returns `{ accessToken }`. |
 | POST | `/auth/logout` | cookie | Revokes the token family and clears the cookie. |
 | GET | `/me` | user | Profile + `plan` + current limits. |
@@ -96,6 +99,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | Method | Path | Access | Description |
 |---|---|---|---|
 | GET | `/browse/home` | user | Sections: new releases, popular, recently played. |
+| GET | `/browse/showcase` | public | `{ covers }`: up to 48 random public album covers for the sign-in page. |
 | GET | `/artists` · `/artists/:id` | user | Detail with albums and popular tracks. |
 | GET | `/albums` · `/albums/:id` | user | Detail with tracks. |
 | GET | `/tracks/:id` | user | |
@@ -283,3 +287,11 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - The last appearance is cached in `localStorage` (`waven-appearance`) and applied before `/me` loads, so a reload does not flash the default; `/me` always wins. The admin panel and the login page keep the default look.
 - The full-screen player (mobile sheet) is tinted with the cover's color on every plan, as music apps usually do; choosing the app's colors is what Premium adds.
 - Buttons share one interaction model: pointer cursor, a 150 ms eased transition and a 0.97 press scale. Brand buttons brighten with a soft accent glow on hover; neutral ones (outline, ghost, icon) get a translucent foreground overlay, so the hover shows on any surface and theme. The main play buttons also grow slightly (scale 1.05). Menu items highlight with a foreground overlay and an accent icon (the popover is `--elevated`, so the old `--elevated` highlight was invisible); the avatar button shows an accent ring; navigation items tint their icon with the accent. Profile cards are not interactive, so they only show a faint border and shadow on hover or while a field inside has focus, and never move.
+- Email and password accounts sit next to Google sign-in. Passwords are hashed with Node's built-in `crypto.scrypt` (N=2^15, r=8, p=3, a 16-byte random salt, stored as `scrypt$N$r$p$salt$key` so the cost can be raised later) and compared in constant time. Passwords are 8 to 128 characters with no composition rules (NIST SP 800-63B); they are NFKC-normalized before hashing and never trimmed. Emails are trimmed and lowercased.
+- `POST /auth/register` and `POST /auth/login` reuse the session of the Google flow (15 min access JWT and the rotating refresh cookie), the strict auth throttler (10/min per IP and route) and the CSRF check of `/auth/refresh` (`X-Requested-With` and a trusted `Origin`), because they set cookies too. `ADMIN_EMAILS` grants admin at sign-up and at every password login.
+- A failed login always answers 401 `INVALID_CREDENTIALS` ("Invalid email or password"), whether the email is unknown, the password is wrong or the account only has Google; an unknown email still runs a scrypt hash so the timing does not tell them apart. Sign-up has to say 409 `EMAIL_IN_USE` for a taken email, which reveals that it exists; without email verification this cannot be avoided, and the throttler limits it.
+- Accounts are never merged silently. Signing up with the email of a Google account answers 409. Google sign-in with the email of a password-only account takes that account over: Google proves the email and our sign-up does not, so the password is removed and every session of the account is revoked. Otherwise someone could register a victim's email first and keep access after the real owner signs in with Google.
+- Out of scope for the MVP: email verification, password reset, changing the password, and adding a password to a Google account (or the reverse) from the profile.
+- The sign-in page shows one of three interactive cover backdrops, picked at random on each visit (`?backdrop=wall|mosaic|float` forces one): a tilted 3D wall of scrolling columns with a mouse spotlight, a grayscale mosaic that lights up around the mouse and sends a wave on click, and covers floating in three parallax layers over an aurora. They are inspired by Aceternity UI, Magic UI and React Bits, written in-house with CSS and `requestAnimationFrame` (no new dependency). Without a mouse they animate on their own; under `prefers-reduced-motion` they stand still. They are decorative (`aria-hidden`) and only render in the browser, so the random pick never mismatches the server HTML.
+- The covers come from the public `GET /browse/showcase`: random albums that are public anyway (at least one ready track), with a cover, from the Jamendo seed or admin uploads only. The local `catalog:import` is never shown there, because it may hold copyrighted art. Without covers (API down, empty catalog) the backdrops keep their shape with empty tiles.
+- Google sign-in on that page is a round button with only the "G" mark, named "Continue with Google" for assistive technology. The mark keeps Google's four brand colors, the only colors outside the design tokens.

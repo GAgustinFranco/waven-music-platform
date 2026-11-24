@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, QueryFailedError, Repository } from 'typeorm';
 import { containsPattern } from '../../common/dto/pagination.dto.js';
 import { type Backdrop, isDefaultAppearance, type Theme } from './appearance.js';
 import { Plan } from './plan.js';
@@ -23,7 +23,26 @@ export interface UpsertOptions {
   grantAdmin: boolean;
 }
 
+export interface ProviderLogin {
+  user: User;
+  /** True when Google took over a password-only account with the same email. */
+  passwordRemoved: boolean;
+}
+
 const MAX_DISPLAY_NAME = 50;
+
+const emailInUse = () =>
+  new ConflictException({
+    code: 'EMAIL_IN_USE',
+    message: 'An account with this email already exists. Sign in instead',
+  });
+
+/** Postgres `unique_violation`. */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    error instanceof QueryFailedError && (error.driverError as { code?: unknown }).code === '23505'
+  );
+}
 
 @Injectable()
 export class UsersService {
@@ -37,11 +56,23 @@ export class UsersService {
     return user;
   }
 
+  findByEmail(email: string): Promise<User | null> {
+    return this.users.findOneBy({ email: email.toLowerCase() });
+  }
+
   /**
    * Creates the user on first login. Later logins refresh the email and avatar
    * from the provider but keep the display name the user may have edited.
+   *
+   * Google verifies the email and our sign-up does not, so a password-only account
+   * with the same email is taken over: its password is removed (`passwordRemoved`)
+   * and the caller must end its sessions. Whoever registered the email first
+   * therefore cannot lie in wait for its real owner.
    */
-  async upsertFromProvider(profile: ExternalProfile, options: UpsertOptions): Promise<User> {
+  async upsertFromProvider(
+    profile: ExternalProfile,
+    options: UpsertOptions,
+  ): Promise<ProviderLogin> {
     const email = profile.email.toLowerCase();
     const existing =
       (await this.users.findOneBy({ googleId: profile.googleId })) ??
@@ -51,12 +82,17 @@ export class UsersService {
       existing ??
       this.users.create({
         googleId: profile.googleId,
+        passwordHash: null,
         displayName:
           profile.displayName.trim().slice(0, MAX_DISPLAY_NAME) ||
           email.slice(0, email.indexOf('@')),
         role: Role.User,
       });
 
+    const passwordRemoved = existing !== null && existing.googleId === null;
+    if (passwordRemoved) {
+      user.passwordHash = null;
+    }
     user.googleId = profile.googleId;
     user.email = email;
     user.avatarUrl = profile.avatarUrl;
@@ -64,6 +100,43 @@ export class UsersService {
       user.role = Role.Admin;
     }
 
+    return { user: await this.users.save(user), passwordRemoved };
+  }
+
+  /** Signs up with an email and a password; 409 `EMAIL_IN_USE` if the email is taken. */
+  async createWithPassword(
+    input: { email: string; displayName: string; passwordHash: string },
+    options: UpsertOptions,
+  ): Promise<User> {
+    const email = input.email.toLowerCase();
+    if (await this.users.existsBy({ email })) {
+      throw emailInUse();
+    }
+    const user = this.users.create({
+      googleId: null,
+      passwordHash: input.passwordHash,
+      email,
+      displayName: input.displayName.slice(0, MAX_DISPLAY_NAME),
+      avatarUrl: null,
+      role: options.grantAdmin ? Role.Admin : Role.User,
+    });
+    try {
+      return await this.users.save(user);
+    } catch (error) {
+      // Two sign-ups with the same email at once: the unique index decides.
+      if (isUniqueViolation(error)) {
+        throw emailInUse();
+      }
+      throw error;
+    }
+  }
+
+  /** Grants the admin role (used at password login, like `upsertFromProvider`). */
+  async grantAdmin(user: User): Promise<User> {
+    if (user.role === Role.Admin) {
+      return user;
+    }
+    user.role = Role.Admin;
     return this.users.save(user);
   }
 

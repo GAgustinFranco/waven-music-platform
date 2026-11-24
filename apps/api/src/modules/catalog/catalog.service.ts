@@ -9,8 +9,10 @@ import {
   type ArtistDetailDto,
   type ArtistPageDto,
   type HomeDto,
+  type ShowcaseDto,
   type TrackDto,
 } from './dto/catalog.dto.js';
+import { CatalogSource } from './entities/catalog-source.js';
 import { Album } from './entities/album.entity.js';
 import { Artist } from './entities/artist.entity.js';
 import { Track, TrackStatus } from './entities/track.entity.js';
@@ -18,6 +20,8 @@ import { Track, TrackStatus } from './entities/track.entity.js';
 const POPULAR_TRACKS = 10;
 const NEW_RELEASES = 12;
 const RECENTLY_PLAYED = 10;
+const SHOWCASE_COVERS = 48;
+const SHOWCASE_SOURCES = [CatalogSource.Jamendo, CatalogSource.Upload];
 
 /** A track is public when it is ready and not soft-deleted (SPEC §6.7). */
 const hasReadyTrack = (column: 'artist_id' | 'album_id', ref: string) =>
@@ -109,6 +113,26 @@ export class CatalogService {
       throw new NotFoundException({ code: 'TRACK_NOT_FOUND', message: 'Track not found' });
     }
     return track;
+  }
+
+  /**
+   * Random covers for the public sign-in page. Only albums that are public anyway,
+   * and never the local import, which may hold copyrighted art (SPEC §7).
+   */
+  async showcase(limit = SHOWCASE_COVERS): Promise<ShowcaseDto> {
+    const albums = await this.albums
+      .createQueryBuilder('album')
+      .select(['album.id', 'album.coverKey'])
+      .where(hasReadyTrack('album_id', '"album"."id"'), { ready: TrackStatus.Ready })
+      .andWhere('album.coverKey IS NOT NULL')
+      .andWhere('album.source IN (:...sources)', { sources: SHOWCASE_SOURCES })
+      .orderBy('RANDOM()')
+      .limit(limit)
+      .getMany();
+    const covers = albums
+      .map((album) => this.mapper.imageSet(album.coverKey))
+      .filter((cover) => cover !== null);
+    return { covers };
   }
 
   async home(userId: string): Promise<HomeDto> {

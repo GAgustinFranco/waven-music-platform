@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -12,13 +13,20 @@ export enum Role {
   Admin = 'admin',
 }
 
+/** Every user has a way to sign in: Google, a password or both. */
 @Entity('users')
+@Check('CHK_users_has_credential', `"google_id" IS NOT NULL OR "password_hash" IS NOT NULL`)
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'google_id', type: 'varchar', length: 64, unique: true })
-  googleId: string;
+  /** Null for accounts created with an email and a password. */
+  @Column({ name: 'google_id', type: 'varchar', length: 64, unique: true, nullable: true })
+  googleId: string | null;
+
+  /** `PasswordHasher` output; null for Google-only accounts. Never leaves the API. */
+  @Column({ name: 'password_hash', type: 'text', nullable: true })
+  passwordHash: string | null;
 
   /** Always stored lowercased. */
   @Column({ type: 'varchar', length: 320, unique: true })

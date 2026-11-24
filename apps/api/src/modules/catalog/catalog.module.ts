@@ -11,6 +11,7 @@ import {
   AlbumsController,
   ArtistsController,
   BrowseController,
+  ShowcaseController,
   TracksController,
 } from './catalog.controller.js';
 import { CatalogMapper } from './catalog.mapper.js';
@@ -27,6 +28,7 @@ import { TrackAudioService } from './track-audio.service.js';
     AlbumsController,
     TracksController,
     BrowseController,
+    ShowcaseController,
     AdminArtistsController,
     AdminAlbumsController,
     AdminTracksController,

@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -12,13 +13,17 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiCookieAuth,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiFoundResponse,
   ApiHeader,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -33,7 +38,7 @@ import {
 } from './auth.cookies.js';
 import { AuthService } from './auth.service.js';
 import { Public } from './decorators/auth.decorators.js';
-import { AccessTokenDto } from './dto/auth.dto.js';
+import { AccessTokenDto, LoginDto, RegisterDto } from './dto/auth.dto.js';
 import { GoogleAuthGuard, OAuthFailureFilter } from './google/google-auth.guard.js';
 
 /** Strict limit on every auth route (the global one is 100/min). */
@@ -77,6 +82,48 @@ export class AuthController {
     const { refresh } = await this.auth.login(req.user, userAgentOf(req));
     setSessionCookies(res, refresh, this.auth.secureCookies);
     res.redirect(302, `${this.config.get('WEB_URL', { infer: true })}/`);
+  }
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiHeader({ name: 'X-Requested-With', required: true })
+  @ApiCreatedResponse({
+    type: AccessTokenDto,
+    description: 'Creates a password account and sets the session cookies.',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid email, password or display name.' })
+  @ApiConflictResponse({ description: '`EMAIL_IN_USE`: an account with this email exists.' })
+  @ApiForbiddenResponse({ description: 'Untrusted origin.' })
+  @ApiTooManyRequestsResponse({ description: 'More than 10 auth requests per minute.' })
+  async register(
+    @Body() body: RegisterDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AccessTokenDto> {
+    this.auth.assertTrustedOrigin(req);
+    const { user, refresh } = await this.auth.register(body, userAgentOf(req));
+    setSessionCookies(res, refresh, this.auth.secureCookies);
+    return this.auth.signAccessToken(user);
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiHeader({ name: 'X-Requested-With', required: true })
+  @ApiOkResponse({ type: AccessTokenDto, description: 'Sets the session cookies.' })
+  @ApiUnauthorizedResponse({
+    description: '`INVALID_CREDENTIALS`, whether the email or the password is wrong.',
+  })
+  @ApiForbiddenResponse({ description: 'Untrusted origin.' })
+  @ApiTooManyRequestsResponse({ description: 'More than 10 auth requests per minute.' })
+  async login(
+    @Body() body: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AccessTokenDto> {
+    this.auth.assertTrustedOrigin(req);
+    const { user, refresh } = await this.auth.loginWithPassword(body, userAgentOf(req));
+    setSessionCookies(res, refresh, this.auth.secureCookies);
+    return this.auth.signAccessToken(user);
   }
 
   @Post('refresh')

@@ -60,6 +60,7 @@ waven-music-platform/
 | `@nestjs/throttler` | Global rate limiting (100/min) and a strict one on auth (10/min); trusts Render's proxy. |
 | Helmet + allowlisted CORS | CORS is only needed for Swagger and dev; normal traffic goes through the proxy. |
 | Passport Google → 15 min access JWT in memory + 30-day refresh | The access token never touches storage, so it is not exposed to persistent XSS. The refresh token rotates, and reusing one revokes the whole family. |
+| Email and password with Node's `crypto.scrypt` | A second way to sign in that issues the same session. Built into Node, so no bcrypt or argon2 dependency (and no native build on Windows). |
 | Refresh cookie `httpOnly; Secure; SameSite=Lax; Path=/api/auth` | Minimal exposure. As CSRF protection, refresh requires an `X-Requested-With` header and a valid `Origin`. |
 | Signed stream token in the query string (HMAC, 1 h) | `<audio>` cannot send an `Authorization` header, and the token is bound to the user, the track and the quality. |
 | `StorageDriver` (`local` \| `s3`) | Same interface (`put`, `getStream(range)`, `getSignedUrl`, `delete`). R2 in prod via `@aws-sdk/client-s3`. |
@@ -82,6 +83,8 @@ waven-music-platform/
 **Login**
 1. `/api/auth/google` → Google → `/api/auth/google/callback`. The API upserts the user, sets the cookie and redirects to `/`.
 2. The web calls `POST /api/auth/refresh` and keeps the `accessToken` in memory.
+
+With email and password, the form on `/login` calls `POST /api/auth/register` or `POST /api/auth/login`. The API answers with the `accessToken` and sets the same cookies, so the web stores the token and goes to `/` without a redirect through Google.
 
 **Playback**
 1. The store requests `POST /tracks/:id/stream` and receives the signed URL.
