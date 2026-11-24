@@ -10,11 +10,6 @@ export interface PlanUsage {
   ratio: number | null;
 }
 
-const QUALITY_LABEL: Record<Me['limits']['streamQuality'], string> = {
-  std: 'Standard (128 kbps)',
-  high: 'High (320 kbps)',
-};
-
 export const planName = (plan: Me['plan']) => (plan === 'premium' ? 'Premium' : 'Free');
 
 /** What the plan allows and how much of it is used (SPEC §2), for the profile page. */
@@ -35,7 +30,7 @@ export function describePlan(limits: Me['limits'], playlistCount: number | null)
         };
   return {
     playlists,
-    quality: QUALITY_LABEL[limits.streamQuality],
+    themes: limits.themes ? 'All themes' : 'Classic only',
     atLimit: max !== null && playlistCount !== null && used >= max,
   };
 }

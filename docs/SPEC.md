@@ -8,7 +8,8 @@
 **Included**
 - Google login or email and password, session with JWT + refresh token, and an editable profile.
 - Catalog of artists, albums and tracks, managed from an admin panel.
-- Authenticated streaming with HTTP Range, in two qualities (128 and 320 kbps).
+- Authenticated streaming with HTTP Range at 320 kbps on every plan.
+- Transactional emails: a welcome (with a one-click verification link for password accounts) and a Premium welcome.
 - Full player: queue, shuffle, repeat, volume, Media Session and keyboard shortcuts.
 - Search, playlists, favorites and listening history.
 - Free and Premium plans, with a Mercado Pago subscription (sandbox).
@@ -21,7 +22,8 @@
 |---|---|---|
 | Own playlists | Up to 5 | Unlimited |
 | Tracks per playlist | 500 | 500 |
-| Streaming quality | Standard, 128 kbps | High, 320 kbps |
+| Streaming quality | High, 320 kbps | High, 320 kbps |
+| Themes and backdrops | Default only | All |
 | Favorites and history | Yes | Yes |
 
 - **user:** uses the app according to their plan.
@@ -41,7 +43,7 @@
 - US-06 As a user, I want to play, pause, seek within the track, skip to the next one or go back, and adjust the volume from a fixed bar.
 - US-07 As a user, I want to manage a queue (add, remove, reorder and see what is coming up), with shuffle and repeat (off, all or one).
 - US-08 As a user, I want to control playback with the keyboard and with the operating system's media controls.
-- US-09 As a Premium user, I want to listen in high quality automatically.
+- US-09 As a user, I want to listen in high quality automatically, whatever my plan.
 
 **Library**
 - US-10 As a user, I want to search tracks, albums and artists with results as I type.
@@ -66,7 +68,7 @@ All of them have `id uuid`, `createdAt` and `updatedAt` unless stated otherwise.
 
 | Entity | Key fields | Notes |
 |---|---|---|
-| **User** | googleId (unique, nullable), passwordHash (nullable), email (unique), displayName, avatarUrl, role (`user`\|`admin`) | The plan is **not** stored here: it is derived from Subscription. A check constraint requires a Google id or a password. |
+| **User** | googleId (unique, nullable), passwordHash (nullable), email (unique), emailVerifiedAt (nullable), emailVerificationTokenHash (unique, nullable), emailVerificationExpiresAt (nullable), displayName, avatarUrl, role (`user`\|`admin`) | The plan is **not** stored here: it is derived from Subscription. A check constraint requires a Google id or a password. |
 | **RefreshToken** | userId, tokenHash, familyId, expiresAt, revokedAt, userAgent | Rotation with reuse detection per family. |
 | **Artist** | name, slug (unique), bio, imageKey | |
 | **Album** | artistId, title, slug (unique per artist), releaseDate, coverKey, dominantColor (hex) | The color is computed on the server when the cover is uploaded. |
@@ -89,6 +91,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | GET | `/auth/google` | public | Starts OAuth. |
 | GET | `/auth/google/callback` | public | Creates or updates the user, sets the refresh cookie and redirects to the web. |
 | POST | `/auth/register` | public + CSRF header | `{ email, password, displayName }` → 201 `{ accessToken }` and the refresh cookie. 409 `EMAIL_IN_USE`. |
+| POST | `/auth/verify-email` | public | `{ token }` from the welcome email → 204 and the email is verified; the token is consumed. 400 `EMAIL_VERIFICATION_INVALID` if it is unknown, used or expired. |
 | POST | `/auth/login` | public + CSRF header | `{ email, password }` → `{ accessToken }` and the refresh cookie. 401 `INVALID_CREDENTIALS`. |
 | POST | `/auth/refresh` | cookie | Rotates the refresh token and returns `{ accessToken }`. |
 | POST | `/auth/logout` | cookie | Revokes the token family and clears the cookie. |
@@ -103,7 +106,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | GET | `/artists` · `/artists/:id` | user | Detail with albums and popular tracks. |
 | GET | `/albums` · `/albums/:id` | user | Detail with tracks. |
 | GET | `/tracks/:id` | user | |
-| POST | `/tracks/:id/stream` | user | Returns `{ url, quality, expiresAt }`, a signed URL based on the plan. |
+| POST | `/tracks/:id/stream` | user | Returns `{ url, quality, expiresAt }`, a signed URL (`high` on every plan). |
 | GET | `/stream/:trackId?token=` | signed token | Audio with `Range` support (206). With S3 storage, it redirects (302) to a presigned URL. |
 | GET | `/media/*` | public | Cover and artist images (in dev; in prod, a CDN or public bucket). |
 | GET | `/search?q=&type=&limit=` | user | `type` = `track`\|`album`\|`artist`\|`all`. Returns `{ tracks, albums, artists, topResult }`; `limit` (1–20, default 10) applies per type. |
@@ -146,7 +149,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 
 1. **Effective plan:** a user is Premium if they have a Subscription with `status = authorized` and `currentPeriodEnd > now`. Also if it is `cancelled` but `currentPeriodEnd` is still in the future: the user keeps access until the end of the paid period.
 2. **Downgrade:** if a user goes back to Free with more than 5 playlists, they keep all of them and can edit and play them, but cannot create new ones until they have fewer than 5.
-3. **Quality:** it is fixed when the stream token is issued (Free = std, Premium = high). The token lasts 1 h and is bound to the user, the track and the quality.
+3. **Quality:** it is fixed when the stream token is issued, from the plan's limits (every plan = high, 320 kbps). The token lasts 1 h and is bound to the user, the track and the quality.
 4. **History:** a play is recorded after ≥ 30 s of listening, or the full track if it is shorter. The client sends it once per play. "Recently played" shows tracks without repeats.
 5. **playCount:** incremented on every valid history entry.
 6. **Per-resource authorization:** playlists can only be seen and changed by their owner. If the resource belongs to someone else, the API returns **404** (not 403) so it does not reveal what exists.
@@ -291,7 +294,13 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - `POST /auth/register` and `POST /auth/login` reuse the session of the Google flow (15 min access JWT and the rotating refresh cookie), the strict auth throttler (10/min per IP and route) and the CSRF check of `/auth/refresh` (`X-Requested-With` and a trusted `Origin`), because they set cookies too. `ADMIN_EMAILS` grants admin at sign-up and at every password login.
 - A failed login always answers 401 `INVALID_CREDENTIALS` ("Invalid email or password"), whether the email is unknown, the password is wrong or the account only has Google; an unknown email still runs a scrypt hash so the timing does not tell them apart. Sign-up has to say 409 `EMAIL_IN_USE` for a taken email, which reveals that it exists; without email verification this cannot be avoided, and the throttler limits it.
 - Accounts are never merged silently. Signing up with the email of a Google account answers 409. Google sign-in with the email of a password-only account takes that account over: Google proves the email and our sign-up does not, so the password is removed and every session of the account is revoked. Otherwise someone could register a victim's email first and keep access after the real owner signs in with Google.
-- Out of scope for the MVP: email verification, password reset, changing the password, and adding a password to a Google account (or the reverse) from the profile.
+- Out of scope for the MVP: password reset, changing the password, resending the verification link, requiring a verified email for anything, and adding a password to a Google account (or the reverse) from the profile.
 - The sign-in page shows one of three interactive cover backdrops, picked at random on each visit (`?backdrop=wall|mosaic|float` forces one): a tilted 3D wall of scrolling columns with a mouse spotlight, a grayscale mosaic that lights up around the mouse and sends a wave on click, and covers floating in three parallax layers over an aurora. They are inspired by Aceternity UI, Magic UI and React Bits, written in-house with CSS and `requestAnimationFrame` (no new dependency). Without a mouse they animate on their own; under `prefers-reduced-motion` they stand still. They are decorative (`aria-hidden`) and only render in the browser, so the random pick never mismatches the server HTML.
 - The covers come from the public `GET /browse/showcase`: random albums that are public anyway (at least one ready track), with a cover, from the Jamendo seed or admin uploads only. The local `catalog:import` is never shown there, because it may hold copyrighted art. Without covers (API down, empty catalog) the backdrops keep their shape with empty tiles.
 - Google sign-in on that page is a round button with only the "G" mark, named "Continue with Google" for assistive technology. The mark keeps Google's four brand colors, the only colors outside the design tokens.
+- Audio quality is no longer a plan difference: `PLAN_LIMITS` gives `streamQuality: high` to Free too. The `std` quality, its 128 kbps file and the token claim stay, so tokens issued before the change keep working and the difference can come back without a migration. Plan limits also carry `themes` (Premium only), and the web lists plan benefits from those limits.
+- Email goes through a `MailDriver`, like `StorageDriver`: `log` in dev (it only logs the subject, a masked recipient and, outside production, the links), `memory` in tests and `resend` in production (Resend's HTTP API through `fetch`, so no SDK dependency). `MAIL_DRIVER`, `MAIL_FROM` and `RESEND_API_KEY` are validated at startup; the key is required only with `resend`. Mailpit was not added: the log driver is enough to open the links in dev.
+- Sending never blocks or fails a request: `MailService.send` is fire-and-forget and only logs the template name and the error message, never the recipient, the content or a token. Templates are single-column HTML with inline styles, `lang="en"` and every link also printed as text, plus a plain-text version.
+- Every new account gets one welcome email. Password accounts get a one-click link in it: 32 random bytes (base64url) of which only the SHA-256 is stored on the user, valid for 24 hours and single use (one `UPDATE` checks the hash and the expiry and clears it). A new sign-up has one pending token at a time; there is no resend. Google accounts count as verified at the first sign-in (and the migration marks existing Google accounts verified); a Google takeover of a password account verifies it and clears its token.
+- The link opens `/verify-email?token=…` on the web, which works with or without a session and posts the token to `POST /auth/verify-email`. A GET link on the API would be used up by mail scanners that open links. The page drops the token from the address bar and sends no referrer. Verification is informational for now: nothing requires it, and it is not exposed in `/me`.
+- The Premium welcome is sent when a subscription goes from `pending` to `authorized`, after the transaction commits, whether the webhook or the pending sync applied it. The row lock and the state machine (nothing returns to `pending`) make that happen once per subscription, so webhook retries and duplicates never send it twice, and resuming a paused subscription sends nothing. In `onetime` mode each new 30-day pass is a new subscription, so each purchase gets its own welcome.

@@ -13,6 +13,8 @@ import {
   type ProviderUpdate,
 } from '../src/modules/billing/payment-provider.js';
 import { PaymentMode, SubscriptionStatus } from '../src/modules/billing/subscription.entity.js';
+import { MAIL_DRIVER } from '../src/modules/mail/mail.types.js';
+import { type MemoryMailDriver } from '../src/modules/mail/memory-mail.driver.js';
 import { insertCatalog } from './fixtures.js';
 import { createTestApp, resetDatabase, type TestApp, testLogin } from './utils.js';
 
@@ -112,6 +114,13 @@ describe('Billing (e2e)', () => {
       subscription: { id: string; status: string; currentPeriodEnd: string | null } | null;
     };
 
+  /** Premium welcomes sent to the payer; sending happens after the response. */
+  const premiumWelcomes = () =>
+    ctx.app
+      .get<MemoryMailDriver>(MAIL_DRIVER)
+      .to('payer@waven.test')
+      .filter((message) => message.subject === 'Welcome to Waven Premium');
+
   const eventCount = async (): Promise<number> => {
     const rows: { count: string }[] = await ctx.app
       .get(DataSource)
@@ -124,7 +133,11 @@ describe('Billing (e2e)', () => {
 
     expect(response.body.mode).toBe('preapproval');
     expect(response.body.items).toMatchObject([
-      { id: 'free', amount: 0, limits: { maxPlaylists: 5, streamQuality: 'std' } },
+      {
+        id: 'free',
+        amount: 0,
+        limits: { maxPlaylists: 5, streamQuality: 'high', themes: false },
+      },
       { id: 'premium', amount: 2999, currency: 'ARS', periodDays: 30 },
     ]);
   });
@@ -132,7 +145,7 @@ describe('Billing (e2e)', () => {
   it('starts on Free without a subscription', async () => {
     expect(await status()).toEqual({ plan: 'free', subscription: null });
     const stream = await request(ctx.server).post(`/tracks/${trackId}/stream`).set(fan).expect(200);
-    expect(stream.body.quality).toBe('std');
+    expect(stream.body.quality).toBe('high');
   });
 
   it('requires a session for billing routes', async () => {
@@ -210,10 +223,12 @@ describe('Billing (e2e)', () => {
     const me = await request(ctx.server).get('/me').set(fan).expect(200);
     expect(me.body).toMatchObject({
       plan: 'premium',
-      limits: { maxPlaylists: null, streamQuality: 'high' },
+      limits: { maxPlaylists: null, streamQuality: 'high', themes: true },
     });
     const stream = await request(ctx.server).post(`/tracks/${trackId}/stream`).set(fan).expect(200);
     expect(stream.body.quality).toBe('high');
+    await vi.waitFor(() => expect(premiumWelcomes()).toHaveLength(1));
+    expect(premiumWelcomes()[0]?.text).toContain('switch between themes');
   });
 
   it('answers 200 to a duplicate event and changes nothing', async () => {
@@ -235,6 +250,7 @@ describe('Billing (e2e)', () => {
     expect(response.body.result).toBe('duplicate');
     expect(preapproval.fetches).toBe(fetches);
     expect(await status()).toEqual(before);
+    expect(premiumWelcomes()).toHaveLength(1);
   });
 
   it('ignores an invalid transition', async () => {
@@ -281,6 +297,9 @@ describe('Billing (e2e)', () => {
       dataId: 'pre-3',
     }).expect(200);
     expect(retry.body.result).toBe('processed');
+    // Still authorized: a refresh of an active subscription is not a new activation.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(premiumWelcomes()).toHaveLength(1);
   });
 
   it('ignores unknown resources and notification types', async () => {
@@ -338,5 +357,10 @@ describe('Billing (e2e)', () => {
       plan: 'premium',
       subscription: { status: 'authorized', currentPeriodEnd: until.toISOString() },
     });
+    // A new subscription that becomes active gets its own welcome, once.
+    await vi.waitFor(() => expect(premiumWelcomes()).toHaveLength(2));
+    await status();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(premiumWelcomes()).toHaveLength(2);
   });
 });

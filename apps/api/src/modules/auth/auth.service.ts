@@ -1,11 +1,23 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { type Request } from 'express';
 import { type EnvironmentVariables } from '../../config/env.validation.js';
+import { MailService } from '../mail/mail.service.js';
+import { welcomeEmail } from '../mail/mail.templates.js';
 import { type User } from '../users/user.entity.js';
 import { type ExternalProfile, UsersService } from '../users/users.service.js';
 import { type AccessTokenPayload } from './auth.types.js';
+import {
+  createVerificationToken,
+  hashVerificationToken,
+  verificationUrl,
+} from './email-verification.js';
 import { PasswordHasher } from './password/password-hasher.js';
 import { type IssuedRefreshToken, RefreshTokenService } from './refresh-token.service.js';
 
@@ -40,6 +52,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService<EnvironmentVariables, true>,
     private readonly passwords: PasswordHasher,
+    private readonly mail: MailService,
   ) {}
 
   /** Signs in (or up) a user coming back from an identity provider. */
@@ -49,25 +62,51 @@ export class AuthService {
     options: { grantAdmin?: boolean } = {},
   ): Promise<Session> {
     const grantAdmin = options.grantAdmin === true || this.isAdminEmail(profile.email);
-    const { user, passwordRemoved } = await this.users.upsertFromProvider(profile, { grantAdmin });
+    const { user, passwordRemoved, created } = await this.users.upsertFromProvider(profile, {
+      grantAdmin,
+    });
     if (passwordRemoved) {
       // Sessions opened with the removed password belong to whoever set it.
       await this.refreshTokens.revokeAllForUser(user.id);
+    }
+    if (created) {
+      // Google already verified the email, so there is no link to click.
+      void this.mail.send(user.email, 'welcome', welcomeEmail({ displayName: user.displayName }));
     }
     return this.startSession(user, userAgent);
   }
 
   /** Creates a password account and signs it in; 409 `EMAIL_IN_USE` if the email exists. */
   async register(input: Registration, userAgent: string | null): Promise<Session> {
+    const { token, ...emailVerification } = createVerificationToken();
     const user = await this.users.createWithPassword(
       {
         email: input.email,
         displayName: input.displayName,
         passwordHash: await this.passwords.hash(input.password),
+        emailVerification,
       },
       { grantAdmin: this.isAdminEmail(input.email) },
     );
+    void this.mail.send(
+      user.email,
+      'welcome',
+      welcomeEmail({
+        displayName: user.displayName,
+        verifyUrl: verificationUrl(this.config.get('WEB_URL', { infer: true }), token),
+      }),
+    );
     return this.startSession(user, userAgent);
+  }
+
+  /** One-click verification; 400 `EMAIL_VERIFICATION_INVALID` if unknown, used or expired. */
+  async verifyEmail(token: string): Promise<void> {
+    if (!(await this.users.verifyEmail(hashVerificationToken(token)))) {
+      throw new BadRequestException({
+        code: 'EMAIL_VERIFICATION_INVALID',
+        message: 'This verification link is invalid or has expired',
+      });
+    }
   }
 
   /** 401 `INVALID_CREDENTIALS` without saying which part was wrong. */

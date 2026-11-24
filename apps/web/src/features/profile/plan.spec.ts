@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { describePlan, planName, validateDisplayName } from './plan';
 
 describe('describePlan', () => {
-  const free = { maxPlaylists: 5, streamQuality: 'std' } as const;
-  const premium = { maxPlaylists: null, streamQuality: 'high' } as const;
+  const free = { maxPlaylists: 5, streamQuality: 'high', themes: false } as const;
+  const premium = { maxPlaylists: null, streamQuality: 'high', themes: true } as const;
 
   it('shows the Free usage against the cap', () => {
     expect(describePlan(free, 3)).toEqual({
       playlists: { label: 'Playlists', value: '3 of 5', ratio: 0.6 },
-      quality: 'Standard (128 kbps)',
+      themes: 'Classic only',
       atLimit: false,
     });
   });
@@ -22,7 +22,7 @@ describe('describePlan', () => {
   it('has no meter for Premium', () => {
     expect(describePlan(premium, 12)).toEqual({
       playlists: { label: 'Playlists', value: '12 (unlimited)', ratio: null },
-      quality: 'High (320 kbps)',
+      themes: 'All themes',
       atLimit: false,
     });
   });

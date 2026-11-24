@@ -6,9 +6,14 @@ import { type NextRequest, NextResponse } from 'next/server';
  */
 const SESSION_COOKIE = 'waven_session';
 const PUBLIC_PATHS = new Set(['/login']);
+/** Open with or without a session: the email link may be opened on any device. */
+const OPEN_PATHS = new Set(['/verify-email']);
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (OPEN_PATHS.has(pathname)) {
+    return NextResponse.next();
+  }
   const hasSession = request.cookies.has(SESSION_COOKIE);
   const isPublic = PUBLIC_PATHS.has(pathname);
 

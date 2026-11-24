@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Subscription } from '@/lib/api/billing';
-import { checkoutOutcome, describeSubscription, formatPrice } from './subscription';
+import { checkoutOutcome, describeSubscription, formatPrice, planFeatures } from './subscription';
 
 const NOW = new Date('2026-11-21T12:00:00Z');
 
@@ -74,5 +74,25 @@ describe('describeSubscription', () => {
     expect(
       describeSubscription(subscription({ status: 'pending', currentPeriodEnd: null }), NOW),
     ).toMatchObject({ label: 'Waiting for payment', cancellable: true });
+  });
+});
+
+describe('planFeatures', () => {
+  it('lists theme switching as the Premium difference, with 320 kbps on both plans', () => {
+    const free = planFeatures({ maxPlaylists: 5, streamQuality: 'high', themes: false });
+    const premium = planFeatures({ maxPlaylists: null, streamQuality: 'high', themes: true });
+
+    expect(free).toEqual([
+      'Up to 5 playlists',
+      'The classic Waven theme',
+      'High-quality audio (320 kbps)',
+      'Liked Songs and listening history',
+    ]);
+    expect(premium).toEqual([
+      'Unlimited playlists',
+      'Switch between themes and backdrops',
+      'High-quality audio (320 kbps)',
+      'Liked Songs and listening history',
+    ]);
   });
 });

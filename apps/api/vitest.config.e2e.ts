@@ -42,6 +42,9 @@ export default defineConfig({
       MP_WEBHOOK_SECRET: 'test-webhook-secret',
       MP_PUBLIC_URL: 'https://tunnel.waven.test',
       MP_TEST_PAYER_EMAIL: '',
+      MAIL_DRIVER: 'memory',
+      MAIL_FROM: 'Waven <no-reply@waven.test>',
+      RESEND_API_KEY: '',
     },
   },
 });

@@ -35,6 +35,14 @@ export async function registerWithPassword(body: Registration): Promise<void> {
   useAuthStore.getState().setAccessToken(data.accessToken);
 }
 
+/** Consumes the one-click token from the welcome email. Works signed in or out. */
+export async function verifyEmail(token: string): Promise<void> {
+  const { error, response } = await api.POST('/auth/verify-email', { body: { token } });
+  if (!response.ok) {
+    throw toApiError(error, response);
+  }
+}
+
 export type AuthFormErrors = Partial<Record<'email' | 'password' | 'displayName' | 'form', string>>;
 
 /** A deliberately loose check: the API has the final word. */

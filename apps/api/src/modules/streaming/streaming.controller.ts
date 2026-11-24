@@ -46,7 +46,10 @@ export class StreamingController {
   @Post('tracks/:id/stream')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOkResponse({ type: StreamUrlDto, description: 'Quality follows the plan (Free = std).' })
+  @ApiOkResponse({
+    type: StreamUrlDto,
+    description: 'Quality follows the plan (every plan gets high, 320 kbps).',
+  })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid access token.' })
   @ApiNotFoundResponse({ description: 'Unknown, deleted or not yet playable track.' })
   issue(

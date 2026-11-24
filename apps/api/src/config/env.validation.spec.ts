@@ -36,6 +36,14 @@ describe('validateEnv', () => {
     expect(env.S3_BUCKET).toBe('waven');
   });
 
+  it('logs emails by default and requires the Resend key only with that driver', () => {
+    expect(validateEnv(REQUIRED).MAIL_DRIVER).toBe('log');
+    expect(() => validateEnv({ ...REQUIRED, MAIL_DRIVER: 'resend' })).toThrow(/RESEND_API_KEY/);
+    expect(() => validateEnv({ ...REQUIRED, MAIL_DRIVER: 'smtp' })).toThrow(/MAIL_DRIVER/);
+    const env = validateEnv({ ...REQUIRED, MAIL_DRIVER: 'resend', RESEND_API_KEY: 're_x' });
+    expect(env.RESEND_API_KEY).toBe('re_x');
+  });
+
   it('parses numbers, booleans and comma-separated lists', () => {
     const env = validateEnv({
       ...REQUIRED,

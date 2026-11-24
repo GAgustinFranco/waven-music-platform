@@ -32,6 +32,29 @@ export class User {
   @Column({ type: 'varchar', length: 320, unique: true })
   email: string;
 
+  /** Set by the one-click link (password accounts) or at the first Google sign-in. */
+  @Column({ name: 'email_verified_at', type: 'timestamptz', nullable: true })
+  emailVerifiedAt: Date | null;
+
+  /** SHA-256 of the pending verification token; the token itself is never stored. */
+  @Column({
+    name: 'email_verification_token_hash',
+    type: 'char',
+    length: 64,
+    unique: true,
+    nullable: true,
+    select: false,
+  })
+  emailVerificationTokenHash: string | null;
+
+  @Column({
+    name: 'email_verification_expires_at',
+    type: 'timestamptz',
+    nullable: true,
+    select: false,
+  })
+  emailVerificationExpiresAt: Date | null;
+
   @Column({ name: 'display_name', type: 'varchar', length: 50 })
   displayName: string;
 

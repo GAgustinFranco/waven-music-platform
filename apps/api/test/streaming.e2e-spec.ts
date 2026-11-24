@@ -66,24 +66,24 @@ describe('Streaming (e2e)', () => {
     return object?.size ?? -1;
   }
 
-  it('gives a Free user a standard-quality URL that serves the 128 kbps file', async () => {
+  it('gives a Free user a high-quality URL that serves the 320 kbps file', async () => {
     const { body, path } = await issue();
 
-    expect(body.quality).toBe('std');
+    expect(body.quality).toBe('high');
     expect(body.url).toMatch(/^http:\/\/localhost:3000\/api\/stream\/[0-9a-f-]{36}\?token=/);
     expect(new Date(body.expiresAt).getTime()).toBeGreaterThan(Date.now() + 3500_000);
 
     const response = await request(ctx.server).get(path).buffer(true).expect(200);
-    const stdSize = await storedSize('std');
-    expect(Number(response.headers['content-length'])).toBe(stdSize);
-    expect(stdSize).toBeLessThan(await storedSize('high'));
+    const highSize = await storedSize('high');
+    expect(Number(response.headers['content-length'])).toBe(highSize);
+    expect(highSize).toBeGreaterThan(await storedSize('std'));
     expect(response.headers['content-type']).toBe('audio/mpeg');
     expect(response.headers['accept-ranges']).toBe('bytes');
   });
 
   it('answers a Range request with 206 and a correct Content-Range', async () => {
     const { path } = await issue();
-    const size = await storedSize('std');
+    const size = await storedSize('high');
 
     const first = await request(ctx.server)
       .get(path)
@@ -111,7 +111,7 @@ describe('Streaming (e2e)', () => {
 
   it('answers 416 for a range outside the file', async () => {
     const { path } = await issue();
-    const size = await storedSize('std');
+    const size = await storedSize('high');
 
     const response = await request(ctx.server).get(path).set('Range', `bytes=${size}-`).expect(416);
     expect(response.headers['content-range']).toBe(`bytes */${size}`);

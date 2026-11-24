@@ -10,16 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSessionReady } from '@/features/auth/use-session-ready';
 import { billingStatusQuery, type PlanOffer, plansQuery } from '@/lib/api/billing';
 import { useCheckout } from './mutations';
-import { formatPrice } from './subscription';
-
-function features(plan: PlanOffer): string[] {
-  const { maxPlaylists, streamQuality } = plan.limits;
-  return [
-    maxPlaylists === null ? 'Unlimited playlists' : `Up to ${maxPlaylists} playlists`,
-    streamQuality === 'high' ? 'High-quality audio (320 kbps)' : 'Standard audio (128 kbps)',
-    'Liked Songs and listening history',
-  ];
-}
+import { formatPrice, planFeatures } from './subscription';
 
 /** Plans page (US-14): compares Free and Premium and starts the Mercado Pago checkout. */
 export function PremiumView() {
@@ -122,7 +113,7 @@ function PlanCard({ plan, recurring, current, subscriptionStatus }: PlanCardProp
       </div>
 
       <ul className="flex flex-col gap-2 text-sm">
-        {features(plan).map((feature) => (
+        {planFeatures(plan.limits).map((feature) => (
           <li key={feature} className="flex items-center gap-2">
             <Check aria-hidden="true" className="text-success size-4 shrink-0" />
             {feature}

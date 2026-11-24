@@ -29,6 +29,12 @@ export enum StorageDriverKind {
   S3 = 's3',
 }
 
+export enum MailDriverKind {
+  Log = 'log',
+  Memory = 'memory',
+  Resend = 'resend',
+}
+
 export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
@@ -218,6 +224,20 @@ export class EnvironmentVariables {
   /** Mercado Pago API origin. */
   @IsUrl({ require_tld: false, require_protocol: true })
   MP_API_URL = 'https://api.mercadopago.com';
+
+  /** `log` only logs (dev), `memory` keeps messages for tests, `resend` sends them (prod). */
+  @IsEnum(MailDriverKind)
+  MAIL_DRIVER: MailDriverKind = MailDriverKind.Log;
+
+  /** Sender, e.g. `Waven <hello@example.com>`; with Resend the domain must be verified. */
+  @IsString()
+  @IsNotEmpty()
+  MAIL_FROM = 'Waven <no-reply@waven.local>';
+
+  @ValidateIf((env: EnvironmentVariables) => env.MAIL_DRIVER === MailDriverKind.Resend)
+  @IsString()
+  @IsNotEmpty()
+  RESEND_API_KEY?: string;
 }
 
 /**

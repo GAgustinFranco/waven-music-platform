@@ -13,12 +13,15 @@ export enum StreamQuality {
 export interface PlanLimits {
   /** `null` means unlimited. */
   maxPlaylists: number | null;
+  /** Every plan streams at 320 kbps; `std` (128 kbps) is still transcoded but unused. */
   streamQuality: StreamQuality;
+  /** Whether the user can switch themes and backdrops (see appearance.ts). */
+  themes: boolean;
 }
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
-  [Plan.Free]: { maxPlaylists: 5, streamQuality: StreamQuality.Standard },
-  [Plan.Premium]: { maxPlaylists: null, streamQuality: StreamQuality.High },
+  [Plan.Free]: { maxPlaylists: 5, streamQuality: StreamQuality.High, themes: false },
+  [Plan.Premium]: { maxPlaylists: null, streamQuality: StreamQuality.High, themes: true },
 };
 
 /** The fields of a subscription the plan depends on. */
