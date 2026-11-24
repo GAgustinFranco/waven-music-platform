@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { SearchPageQueryDto } from '../../../common/dto/pagination.dto.js';
+import { Backdrop, effectiveAppearance, Theme } from '../appearance.js';
 import { PLAN_LIMITS, Plan, StreamQuality } from '../plan.js';
 import { Role, type User } from '../user.entity.js';
 
@@ -44,6 +45,14 @@ export class UserDto {
   }
 }
 
+export class AppearanceDto {
+  @ApiProperty({ enum: Theme, enumName: 'Theme' })
+  theme: Theme;
+
+  @ApiProperty({ enum: Backdrop, enumName: 'Backdrop' })
+  backdrop: Backdrop;
+}
+
 export class MeDto extends UserDto {
   @ApiProperty({ enum: Plan, enumName: 'Plan' })
   plan: Plan;
@@ -51,8 +60,27 @@ export class MeDto extends UserDto {
   @ApiProperty({ type: PlanLimitsDto })
   limits: PlanLimitsDto;
 
+  @ApiProperty({
+    type: AppearanceDto,
+    description: 'What the app shows: the default on Free, whatever is saved.',
+  })
+  appearance: AppearanceDto;
+
+  @ApiProperty({
+    type: AppearanceDto,
+    description: 'The saved choice, kept while the user is on Free.',
+  })
+  savedAppearance: AppearanceDto;
+
   static fromUser(user: User, plan: Plan): MeDto {
-    return { ...UserDto.from(user), plan, limits: { ...PLAN_LIMITS[plan] } };
+    const saved = { theme: user.theme, backdrop: user.backdrop };
+    return {
+      ...UserDto.from(user),
+      plan,
+      limits: { ...PLAN_LIMITS[plan] },
+      appearance: effectiveAppearance(saved, plan === Plan.Premium),
+      savedAppearance: saved,
+    };
   }
 }
 
@@ -64,6 +92,24 @@ export class UpdateMeDto {
   @IsNotEmpty()
   @MaxLength(50)
   displayName?: string;
+
+  @ApiPropertyOptional({
+    enum: Theme,
+    enumName: 'Theme',
+    description: 'Anything but `violet` needs Premium (403 `PREMIUM_REQUIRED`).',
+  })
+  @IsOptional()
+  @IsEnum(Theme)
+  theme?: Theme;
+
+  @ApiPropertyOptional({
+    enum: Backdrop,
+    enumName: 'Backdrop',
+    description: '`glow` needs Premium (403 `PREMIUM_REQUIRED`).',
+  })
+  @IsOptional()
+  @IsEnum(Backdrop)
+  backdrop?: Backdrop;
 }
 
 export class UserPageDto {

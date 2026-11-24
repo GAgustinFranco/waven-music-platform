@@ -35,6 +35,14 @@ export class AlbumRefDto {
 
   @ApiProperty({ type: ImageSetDto, nullable: true })
   cover: ImageSetDto | null;
+
+  @ApiProperty({
+    type: 'string',
+    nullable: true,
+    example: '#3a2f6b',
+    description: 'Dominant cover color (hex), darkened for AA contrast with white text.',
+  })
+  dominantColor: string | null;
 }
 
 export class TrackDto {

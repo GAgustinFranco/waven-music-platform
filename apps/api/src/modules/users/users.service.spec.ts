@@ -1,5 +1,7 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { type Repository } from 'typeorm';
+import { Backdrop, DEFAULT_APPEARANCE, effectiveAppearance, Theme } from './appearance.js';
+import { Plan } from './plan.js';
 import { Role, type User } from './user.entity.js';
 import { UsersService } from './users.service.js';
 
@@ -61,5 +63,62 @@ describe('UsersService.changeRole', () => {
     await expect(service.changeRole(ADMIN_ID, OTHER_ID, Role.Admin)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+});
+
+describe('UsersService.updateProfile (appearance)', () => {
+  const stored = () =>
+    ({ id: OTHER_ID, displayName: 'Fan', theme: Theme.Violet, backdrop: Backdrop.Solid }) as User;
+
+  it('lets a Premium user pick any theme and backdrop', async () => {
+    const { service } = setup(stored());
+
+    const result = await service.updateProfile(
+      OTHER_ID,
+      { theme: Theme.Ember, backdrop: Backdrop.Glow },
+      Plan.Premium,
+    );
+
+    expect(result).toMatchObject({ theme: Theme.Ember, backdrop: Backdrop.Glow });
+  });
+
+  it.each([{ theme: Theme.Ocean }, { backdrop: Backdrop.Glow }])(
+    'refuses %j on the Free plan',
+    async (changes) => {
+      const { service, repository } = setup(stored());
+
+      await expect(service.updateProfile(OTHER_ID, changes, Plan.Free)).rejects.toMatchObject({
+        response: { code: 'PREMIUM_REQUIRED' },
+      });
+      expect(repository.save).not.toHaveBeenCalled();
+    },
+  );
+
+  it('lets a Free user go back to the default and still rename', async () => {
+    const { service } = setup({ ...stored(), theme: Theme.Rose } as User);
+
+    const result = await service.updateProfile(
+      OTHER_ID,
+      { displayName: 'New', theme: Theme.Violet },
+      Plan.Free,
+    );
+
+    expect(result).toMatchObject({ displayName: 'New', theme: Theme.Violet });
+  });
+
+  it('keeps a saved theme when a Free user only renames', async () => {
+    const { service } = setup({ ...stored(), theme: Theme.Rose } as User);
+
+    const result = await service.updateProfile(OTHER_ID, { displayName: 'New' }, Plan.Free);
+
+    expect(result).toMatchObject({ displayName: 'New', theme: Theme.Rose });
+  });
+});
+
+describe('effectiveAppearance', () => {
+  it('shows the saved choice on Premium and the default on Free', () => {
+    const saved = { theme: Theme.Mono, backdrop: Backdrop.Glow };
+    expect(effectiveAppearance(saved, true)).toEqual(saved);
+    expect(effectiveAppearance(saved, false)).toEqual(DEFAULT_APPEARANCE);
   });
 });

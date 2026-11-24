@@ -718,6 +718,14 @@ export interface components {
             maxPlaylists: number | null;
             streamQuality: components["schemas"]["StreamQuality"];
         };
+        /** @enum {string} */
+        Theme: "violet" | "dynamic" | "ocean" | "ember" | "rose" | "aurora" | "sunset" | "mono";
+        /** @enum {string} */
+        Backdrop: "solid" | "glow";
+        AppearanceDto: {
+            theme: components["schemas"]["Theme"];
+            backdrop: components["schemas"]["Backdrop"];
+        };
         MeDto: {
             /** Format: uuid */
             id: string;
@@ -730,9 +738,17 @@ export interface components {
             createdAt: string;
             plan: components["schemas"]["Plan"];
             limits: components["schemas"]["PlanLimitsDto"];
+            /** @description What the app shows: the default on Free, whatever is saved. */
+            appearance: components["schemas"]["AppearanceDto"];
+            /** @description The saved choice, kept while the user is on Free. */
+            savedAppearance: components["schemas"]["AppearanceDto"];
         };
         UpdateMeDto: {
             displayName?: string;
+            /** @description Anything but `violet` needs Premium (403 `PREMIUM_REQUIRED`). */
+            theme?: components["schemas"]["Theme"];
+            /** @description `glow` needs Premium (403 `PREMIUM_REQUIRED`). */
+            backdrop?: components["schemas"]["Backdrop"];
         };
         UserDto: {
             /** Format: uuid */
@@ -896,6 +912,11 @@ export interface components {
             title: string;
             slug: string;
             cover: components["schemas"]["ImageSetDto"] | null;
+            /**
+             * @description Dominant cover color (hex), darkened for AA contrast with white text.
+             * @example #3a2f6b
+             */
+            dominantColor: string | null;
         };
         TrackDto: {
             /** Format: uuid */
@@ -1333,6 +1354,13 @@ export interface operations {
             };
             /** @description Missing or invalid access token. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `PREMIUM_REQUIRED`: a theme or backdrop on Free. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -34,7 +34,7 @@ export function PlayPauseButton({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) 
       aria-label={isPlaying ? 'Pause' : 'Play'}
       onClick={togglePlay}
       className={cn(
-        'bg-foreground text-background hover:bg-foreground/90 rounded-full',
+        'bg-foreground text-background hover:bg-foreground/90 rounded-full hover:scale-105',
         size === 'sm' && 'size-9',
         size === 'md' && 'size-10',
         size === 'lg' && 'size-16',

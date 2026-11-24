@@ -34,7 +34,7 @@ export function PlayCollectionButton({
       disabled={tracks.length === 0}
       aria-label={`${isPlaying ? 'Pause' : 'Play'} ${label}`}
       onClick={() => (active ? togglePlay() : playQueue(tracks, 0, source))}
-      className="bg-brand text-primary-foreground hover:bg-brand-hover size-14 rounded-full shadow-lg"
+      className="bg-brand text-primary-foreground hover:bg-brand-hover hover:shadow-brand/30 size-14 rounded-full shadow-lg hover:scale-105"
     >
       <Icon aria-hidden="true" className="size-6 fill-current" />
     </Button>

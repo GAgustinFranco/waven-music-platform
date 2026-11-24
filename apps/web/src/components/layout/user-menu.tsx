@@ -50,7 +50,12 @@ export function UserMenu() {
       {premium ? <PremiumBadge /> : null}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:ring-brand/60 data-[state=open]:ring-brand rounded-full ring-2 ring-transparent hover:scale-105"
+            aria-label="Account menu"
+          >
             <Avatar>
               {me.avatarUrl ? (
                 <AvatarImage src={me.avatarUrl} alt="" referrerPolicy="no-referrer" />
@@ -97,7 +102,7 @@ function PremiumBadge() {
   return (
     <Link
       href="/profile"
-      className="bg-brand/15 text-brand flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+      className="bg-brand/15 text-brand hover:bg-brand/25 hover:ring-brand/40 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-transparent hover:shadow-md hover:shadow-brand/20"
     >
       <Gem aria-hidden="true" className="size-3.5" />
       Premium

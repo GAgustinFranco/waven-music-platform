@@ -31,11 +31,19 @@ function BottomNavLinks({ pathname }: { pathname: string | null }) {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex flex-1 flex-col items-center justify-center gap-1 rounded-md text-xs font-medium -outline-offset-2',
-                  active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  'group ease-standard m-1 flex flex-1 flex-col items-center justify-center gap-1 rounded-md text-xs font-medium -outline-offset-2 transition-colors duration-150',
+                  active
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
                 )}
               >
-                <Icon aria-hidden="true" className={cn('size-6', active && 'text-brand')} />
+                <Icon
+                  aria-hidden="true"
+                  className={cn(
+                    'ease-standard size-6 transition-[color,scale] duration-150 group-hover:scale-110',
+                    active ? 'text-brand' : 'group-hover:text-brand',
+                  )}
+                />
                 {label}
               </Link>
             </li>

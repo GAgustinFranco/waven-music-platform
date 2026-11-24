@@ -52,6 +52,7 @@
 - US-14 As a Free user, I want to upgrade to Premium by paying with Mercado Pago.
 - US-15 As a Premium user, I want to see my subscription status and cancel it.
 - US-16 As a Free user with 5 playlists, I want to see clearly why I cannot create another one and how to upgrade to Premium.
+- US-16b As a Premium user, I want to pick a color theme and backdrop for the app, including one that follows the album playing.
 
 **Administration**
 - US-17 As an admin, I want to create, edit and delete artists, albums (with cover art) and tracks (uploading the audio).
@@ -89,7 +90,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | POST | `/auth/refresh` | cookie | Rotates the refresh token and returns `{ accessToken }`. |
 | POST | `/auth/logout` | cookie | Revokes the token family and clears the cookie. |
 | GET | `/me` | user | Profile + `plan` + current limits. |
-| PATCH | `/me` | user | Updates `displayName`. |
+| PATCH | `/me` | user | Updates `displayName`, `theme` and `backdrop`; a theme or backdrop other than the default needs Premium (403 `PREMIUM_REQUIRED`). |
 
 **Catalog and streaming**
 | Method | Path | Access | Description |
@@ -275,3 +276,10 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - Premium users see a "Premium" badge next to the account menu, linking to their profile, where the subscription card shows its status and lets them cancel it.
 - A late or lost webhook does not leave the user waiting: while the newest subscription is `pending`, `GET /billing/subscription` reads its state from Mercado Pago (the preapproval, or an approved payment searched by external reference) and applies it through the same state machine. State still never comes from the client or the payload.
 - A user whose subscription is cancelled but still running can subscribe again ("Subscribe again" on `/premium`). In onetime mode the new pass starts where the running one ends (its pending row carries that end, which grants nothing until a payment is approved), so no paid day is lost.
+- Premium themes (phase 9b) only swap color tokens: each theme is a `[data-theme="…"]` block in `globals.css` next to `:root`, set on `<html>` for the app and on any element for the picker previews (so the shadcn mapping is declared again there). Type, spacing, radii and layout are shared. Every theme keeps text and accent at 4.5:1 or more on its surfaces.
+- Themes: Midnight Violet (default, the only one on Free), Dynamic, Deep Ocean, Ember, Rose Noir, Aurora, Sunset and Studio Mono. Backdrops: Solid (default) and Soft glow, a faint radial light in the theme's color behind the content. An "album tint" backdrop was dropped because it overlapped with Dynamic.
+- The choice is stored on the user (`theme`, `backdrop`). `GET /me` returns `appearance` (what the app shows: the default on Free) and `savedAppearance` (the stored choice, kept after a downgrade so it comes back with Premium). A Free user may always save the default; anything else answers 403 `PREMIUM_REQUIRED`.
+- Dynamic derives the whole palette from the cover playing. The web reads the 64 px cover into a 32×32 canvas and picks its most vibrant representative hue: pixels vote for one of 24 hue bins, weighted by saturation and by how far they are from black or white (dark tones such as a burgundy still count); pixels under 12% saturation are ignored. Surfaces, borders and muted text become very dark tints of that hue, the accent is a vivid version of it raised until it reaches 4.5:1, and the glow is stronger than in the fixed themes. A grayscale cover gives a silver theme; an unreadable image (no CORS on a CDN) falls back to `AlbumRefDto.dominantColor`; an empty player keeps Midnight Violet. Colors are cached per cover URL and the palette is registered with `@property`, so it fades over 700 ms between songs (instantly under `prefers-reduced-motion`).
+- The last appearance is cached in `localStorage` (`waven-appearance`) and applied before `/me` loads, so a reload does not flash the default; `/me` always wins. The admin panel and the login page keep the default look.
+- The full-screen player (mobile sheet) is tinted with the cover's color on every plan, as music apps usually do; choosing the app's colors is what Premium adds.
+- Buttons share one interaction model: pointer cursor, a 150 ms eased transition and a 0.97 press scale. Brand buttons brighten with a soft accent glow on hover; neutral ones (outline, ghost, icon) get a translucent foreground overlay, so the hover shows on any surface and theme. The main play buttons also grow slightly (scale 1.05). Menu items highlight with a foreground overlay and an accent icon (the popover is `--elevated`, so the old `--elevated` highlight was invisible); the avatar button shows an accent ring; navigation items tint their icon with the accent. Profile cards are not interactive, so they only show a faint border and shadow on hover or while a field inside has focus, and never move.

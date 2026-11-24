@@ -117,6 +117,16 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - [x] An invalid signature returns 401.
 - [x] Switching to `PAYMENT_MODE=onetime` works without touching the domain.
 
+### Phase 9b — Premium themes
+- Backend: `theme` and `backdrop` on User with their migration, `PATCH /me` gated by plan, effective appearance in `GET /me`, album dominant color on every track.
+- Web: theme tokens, soft-glow backdrop, Dynamic accent from the album playing, Appearance picker on the profile, cover-tinted full-screen player for every plan.
+
+**Acceptance criteria**
+- [x] A Premium user switches among 8 themes and 2 backdrops; only colors change.
+- [x] A Free user sees the themes locked, and the API refuses them with 403 `PREMIUM_REQUIRED`.
+- [x] Going back to Free shows the default and keeps the saved choice (e2e test).
+- [x] The Dynamic accent follows the album playing and always passes AA contrast.
+
 ### Phase 10 — Hardening, deployment and README
 - Playwright tests of the main journey in CI.
 - Deployment on Vercel, Render, managed Postgres and R2 (production seed).
