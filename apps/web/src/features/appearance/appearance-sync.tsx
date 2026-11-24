@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { meQuery } from '@/lib/api/queries';
 import { coverColor } from '@/lib/cover-color';
 import { type DynamicPalette, dynamicPalette } from '@/lib/palette';
+import { AmbientBackdrop } from './ambient-backdrop';
 import { BACKDROP_OPTIONS, type Backdrop, type Theme, THEME_OPTIONS } from '@/lib/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { selectCurrentTrack, usePlayerStore } from '@/stores/player.store';
@@ -64,8 +65,8 @@ function writeCachedAppearance(appearance: CachedAppearance): void {
  * Applies the effective appearance from `/me` to <html> (`data-theme`,
  * `data-backdrop`); the tokens in globals.css do the rest. With the Dynamic
  * theme the whole palette (surfaces, borders, accent and glow) is derived from
- * the most vibrant color of the cover playing. Renders nothing; leaving the app
- * shell (admin, login) restores the default.
+ * the most vibrant color of the cover playing. Renders only the Ambient lights
+ * when that backdrop is on; leaving the app shell (admin, login) restores the default.
  */
 export function AppearanceSync() {
   const status = useAuthStore((state) => state.status);
@@ -144,5 +145,5 @@ export function AppearanceSync() {
     [],
   );
 
-  return null;
+  return backdrop === 'ambient' ? <AmbientBackdrop /> : null;
 }

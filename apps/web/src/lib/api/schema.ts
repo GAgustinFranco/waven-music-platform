@@ -872,7 +872,7 @@ export interface components {
         /** @enum {string} */
         Theme: "violet" | "dynamic" | "ocean" | "ember" | "rose" | "aurora" | "sunset" | "mono";
         /** @enum {string} */
-        Backdrop: "solid" | "glow";
+        Backdrop: "solid" | "glow" | "ambient";
         AppearanceDto: {
             theme: components["schemas"]["Theme"];
             backdrop: components["schemas"]["Backdrop"];
@@ -898,7 +898,7 @@ export interface components {
             displayName?: string;
             /** @description Anything but `violet` needs Premium (403 `PREMIUM_REQUIRED`). */
             theme?: components["schemas"]["Theme"];
-            /** @description `glow` needs Premium (403 `PREMIUM_REQUIRED`). */
+            /** @description `glow` and `ambient` need Premium (403 `PREMIUM_REQUIRED`). */
             backdrop?: components["schemas"]["Backdrop"];
         };
         UserDto: {

@@ -24,6 +24,7 @@ export const THEME_OPTIONS: readonly ThemeOption[] = [
 export const BACKDROP_OPTIONS: readonly { id: Backdrop; name: string }[] = [
   { id: 'solid', name: 'Solid' },
   { id: 'glow', name: 'Soft glow' },
+  { id: 'ambient', name: 'Ambient' },
 ];
 
 type Rgb = [number, number, number];

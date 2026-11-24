@@ -433,6 +433,56 @@
     background-image: radial-gradient(1100px 520px at 70% -12%, var(--glow), transparent 70%);
   }
 
+  /* "Ambient" backdrop: blurred lights in the theme's colors (see AmbientBackdrop). */
+  .ambient-backdrop {
+    overflow: hidden;
+  }
+  .ambient-light {
+    position: absolute;
+    width: 62vmax;
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    filter: blur(80px);
+    will-change: transform;
+  }
+  .ambient-light-1 {
+    left: 35%;
+    top: -35%;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent) 32%, transparent),
+      transparent 70%
+    );
+  }
+  .ambient-light-2 {
+    left: -15%;
+    top: 30%;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent-2) 18%, transparent),
+      transparent 70%
+    );
+  }
+  .ambient-light-3 {
+    left: 55%;
+    top: 50%;
+    background: radial-gradient(circle, var(--glow), transparent 70%);
+  }
+  /* The picker's still preview of Ambient. */
+  .theme-ambient {
+    background-image:
+      radial-gradient(
+        circle at 80% 0%,
+        color-mix(in srgb, var(--accent) 35%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        circle at 10% 100%,
+        color-mix(in srgb, var(--accent-2) 22%, transparent),
+        transparent 60%
+      );
+  }
+
   /* Album/artist header: the API's dominant color (already AA with --text) fading into --bg. */
   .dominant-header {
     background-image: linear-gradient(
