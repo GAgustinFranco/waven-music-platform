@@ -11,6 +11,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, type EntityManager, In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { type EnvironmentVariables } from '../../config/env.validation.js';
 import { MailService } from '../mail/mail.service.js';
+import { NotificationType } from '../notifications/notification.entity.js';
+import { dedupKeys, NotificationsService } from '../notifications/notifications.service.js';
 import { premiumWelcomeEmail } from '../mail/mail.templates.js';
 import { PLAN_LIMITS, Plan } from '../users/plan.js';
 import { User } from '../users/user.entity.js';
@@ -51,6 +53,7 @@ export class BillingService {
     private readonly providers: PaymentProviders,
     private readonly plans: PlanService,
     private readonly mail: MailService,
+    private readonly notifications: NotificationsService,
     config: ConfigService<EnvironmentVariables, true>,
   ) {
     this.webUrl = config.get('WEB_URL', { infer: true }).replace(/\/+$/, '');
@@ -205,6 +208,8 @@ export class BillingService {
    * `authorized`), so the caller sends the Premium welcome after the commit.
    * The row lock and the state machine (nothing goes back to `pending`) make
    * that happen once per subscription, whatever the retries or the sync race.
+   * The in-app "You're on Premium" notification is written in the same
+   * transaction, and its dedup key backs that guarantee up.
    */
   async applyUpdate(
     manager: EntityManager,
@@ -233,7 +238,19 @@ export class BillingService {
       { subscriptionId: subscription.id, from, to: subscription.status },
       'Subscription updated',
     );
-    return from === Pending && subscription.status === Authorized ? subscription : null;
+    if (from !== Pending || subscription.status !== Authorized) {
+      return null;
+    }
+    await this.notifications.notify(
+      {
+        userId: subscription.userId,
+        type: NotificationType.PremiumActivated,
+        dedupKey: dedupKeys.premiumActivated(subscription.id),
+        data: { subscriptionId: subscription.id },
+      },
+      manager,
+    );
+    return subscription;
   }
 
   /** Fire-and-forget Premium welcome; call it only after the activation committed. */

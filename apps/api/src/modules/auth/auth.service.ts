@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -10,6 +11,8 @@ import { type Request } from 'express';
 import { type EnvironmentVariables } from '../../config/env.validation.js';
 import { MailService } from '../mail/mail.service.js';
 import { welcomeEmail } from '../mail/mail.templates.js';
+import { NotificationType } from '../notifications/notification.entity.js';
+import { dedupKeys, NotificationsService } from '../notifications/notifications.service.js';
 import { type User } from '../users/user.entity.js';
 import { type ExternalProfile, UsersService } from '../users/users.service.js';
 import { type AccessTokenPayload } from './auth.types.js';
@@ -46,6 +49,8 @@ const invalidCredentials = () =>
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly users: UsersService,
     private readonly refreshTokens: RefreshTokenService,
@@ -53,6 +58,7 @@ export class AuthService {
     private readonly config: ConfigService<EnvironmentVariables, true>,
     private readonly passwords: PasswordHasher,
     private readonly mail: MailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Signs in (or up) a user coming back from an identity provider. */
@@ -72,6 +78,7 @@ export class AuthService {
     if (created) {
       // Google already verified the email, so there is no link to click.
       void this.mail.send(user.email, 'welcome', welcomeEmail({ displayName: user.displayName }));
+      await this.notifyWelcome(user);
     }
     return this.startSession(user, userAgent);
   }
@@ -96,6 +103,7 @@ export class AuthService {
         verifyUrl: verificationUrl(this.config.get('WEB_URL', { infer: true }), token),
       }),
     );
+    await this.notifyWelcome(user);
     return this.startSession(user, userAgent);
   }
 
@@ -165,6 +173,25 @@ export class AuthService {
 
   private isAdminEmail(email: string): boolean {
     return this.config.get('ADMIN_EMAILS', { infer: true }).includes(email.toLowerCase());
+  }
+
+  /**
+   * The in-app twin of the welcome email. Like the email it never fails the
+   * sign-up: the account already exists, so a failure here only logs.
+   */
+  private async notifyWelcome(user: User): Promise<void> {
+    try {
+      await this.notifications.notify({
+        userId: user.id,
+        type: NotificationType.Welcome,
+        dedupKey: dedupKeys.welcome(),
+      });
+    } catch (error) {
+      this.logger.error(
+        { error: error instanceof Error ? error.message : 'Unknown error', userId: user.id },
+        'Welcome notification could not be stored',
+      );
+    }
   }
 
   private async startSession(user: User, userAgent: string | null): Promise<Session> {

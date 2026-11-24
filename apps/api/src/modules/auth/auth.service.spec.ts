@@ -4,6 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import { type Request } from 'express';
 import { type EnvironmentVariables } from '../../config/env.validation.js';
 import { type MailService } from '../mail/mail.service.js';
+import { NotificationType } from '../notifications/notification.entity.js';
+import { type NotificationsService } from '../notifications/notifications.service.js';
 import { Role, type User } from '../users/user.entity.js';
 import { type UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
@@ -64,6 +66,7 @@ function setup(
   const config = { get: vi.fn((key: keyof EnvironmentVariables) => env[key]) };
   const jwt = new JwtService({ secret: 'x'.repeat(32) });
   const mail = { send: vi.fn().mockResolvedValue(undefined) };
+  const notifications = { notify: vi.fn().mockResolvedValue(true) };
   const service = new AuthService(
     users as unknown as UsersService,
     refreshTokens as unknown as RefreshTokenService,
@@ -71,8 +74,9 @@ function setup(
     config as unknown as ConfigService<EnvironmentVariables, true>,
     passwords as unknown as PasswordHasher,
     mail as unknown as MailService,
+    notifications as unknown as NotificationsService,
   );
-  return { service, users, refreshTokens, passwords, jwt, mail };
+  return { service, users, refreshTokens, passwords, jwt, mail, notifications };
 }
 
 const profile = (email: string) => ({
@@ -200,6 +204,41 @@ describe('AuthService', () => {
       await service.login(profile('fan@example.com'), null);
 
       expect(mail.send).not.toHaveBeenCalled();
+    });
+
+    it('stores a welcome notification for every new account, and only for new ones', async () => {
+      const google = setup({ created: true });
+      await google.service.login(profile('fan@example.com'), null);
+      expect(google.notifications.notify).toHaveBeenCalledWith({
+        userId: 'user-1',
+        type: NotificationType.Welcome,
+        dedupKey: 'welcome',
+      });
+
+      const returning = setup({ created: false });
+      await returning.service.login(profile('fan@example.com'), null);
+      expect(returning.notifications.notify).not.toHaveBeenCalled();
+
+      const password = setup();
+      await password.service.register(
+        { email: 'new@example.com', password: 'a-long-password', displayName: 'New' },
+        null,
+      );
+      expect(password.notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'user-2', type: NotificationType.Welcome }),
+      );
+    });
+
+    it('still signs up when the welcome notification cannot be stored', async () => {
+      const { service, notifications } = setup();
+      notifications.notify.mockRejectedValueOnce(new Error('db down'));
+
+      await expect(
+        service.register(
+          { email: 'new@example.com', password: 'a-long-password', displayName: 'New' },
+          null,
+        ),
+      ).resolves.toMatchObject({ user: { id: 'user-2' } });
     });
 
     it('verifies with the hash of the token and rejects an invalid one', async () => {

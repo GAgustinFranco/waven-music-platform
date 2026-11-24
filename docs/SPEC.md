@@ -79,6 +79,7 @@ All of them have `id uuid`, `createdAt` and `updatedAt` unless stated otherwise.
 | **PlayHistory** | userId, trackId, playedAt, msPlayed, context (`album`\|`playlist`\|`search`\|…) | Index on `(userId, playedAt desc)`. |
 | **Subscription** | userId, provider, mode (`preapproval`\|`onetime`), externalId, status (`pending`\|`authorized`\|`paused`\|`cancelled`), amount, currency, currentPeriodEnd, cancelledAt | Only one active per user. |
 | **WebhookEvent** | provider, externalEventId (unique per provider), type, payload (jsonb), processedAt, error | Guarantees idempotency. |
+| **Notification** | userId (cascade), type (`welcome`|`premium-activated`), data (jsonb, nullable), dedupKey (unique per user), readAt (nullable), createdAt | No `updatedAt`. Index on `(userId, createdAt, id)`. |
 
 ## 5. API
 
@@ -125,6 +126,13 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | PUT · DELETE | `/me/favorites/:trackId` | user | Idempotent. |
 | POST | `/me/history` | user | Takes `{ playId, trackId, msPlayed, context }`; 204. Repeating a `playId` is a no-op. |
 | GET | `/me/history?limit=&cursor=` | user | Newest play first, one entry per play. Returns `{ items, nextCursor }`. |
+
+**Notifications**
+| Method | Path | Access | Description |
+|---|---|---|---|
+| GET | `/notifications?limit=&cursor=` | user | Newest first. Returns `{ items, nextCursor, unreadCount, reminders }`; `unreadCount` and `reminders` cover the whole account. |
+| PATCH | `/notifications/:id/read` | owner | Returns the notification; idempotent. Someone else's or unknown → 404 `NOTIFICATION_NOT_FOUND`. |
+| POST | `/notifications/read-all` | user | 204; marks every notification of the caller read. |
 
 **Billing**
 | Method | Path | Access | Description |
@@ -304,3 +312,9 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - Every new account gets one welcome email. Password accounts get a one-click link in it: 32 random bytes (base64url) of which only the SHA-256 is stored on the user, valid for 24 hours and single use (one `UPDATE` checks the hash and the expiry and clears it). A new sign-up has one pending token at a time; there is no resend. Google accounts count as verified at the first sign-in (and the migration marks existing Google accounts verified); a Google takeover of a password account verifies it and clears its token.
 - The link opens `/verify-email?token=…` on the web, which works with or without a session and posts the token to `POST /auth/verify-email`. A GET link on the API would be used up by mail scanners that open links. The page drops the token from the address bar and sends no referrer. Verification is informational for now: nothing requires it, and it is not exposed in `/me`.
 - The Premium welcome is sent when a subscription goes from `pending` to `authorized`, after the transaction commits, whether the webhook or the pending sync applied it. The row lock and the state machine (nothing returns to `pending`) make that happen once per subscription, so webhook retries and duplicates never send it twice, and resuming a paused subscription sends nothing. In `onetime` mode each new 30-day pass is a new subscription, so each purchase gets its own welcome.
+- In-app notifications mirror the transactional emails in a bell in the app header. The API stores and returns only a `type` and its `data`; the web owns the English copy and the links (welcome → Home, Premium → profile, where the plan is shown).
+- "Verify your email" is a reminder derived on every read (a password account with `emailVerifiedAt IS NULL`), not a stored row: `emailVerifiedAt` stays the single source of truth, verifying resolves it with nothing else to update, existing unverified accounts get it without a backfill, and it can never go stale. Reminders come in a separate `reminders` list, cannot be marked read and count toward the badge while active.
+- "You're on Premium" (`premium-activated`) is written by `BillingService.applyUpdate` in the same transaction that moves a subscription from `pending` to `authorized`, with `dedupKey = premium-activated:<subscriptionId>`. The row lock and the state machine already make that happen once; the unique `(userId, dedupKey)` and `INSERT … ON CONFLICT DO NOTHING` back it up against webhook retries, duplicates and the pending-sync race. If the activation rolls back, so does the notification.
+- A welcome notification (`dedupKey = welcome`) is stored for every new account, Google or password, next to the welcome email, so the bell is never empty for a new user. Like the email, it never fails a sign-up: a storage error only logs. Accounts created before this feature get none.
+- Opening the bell marks nothing as read, so the badge keeps meaning "something new". A notification is read when it is clicked (it then opens its link and the popover closes), or all at once with "Mark all as read". The badge counts unread notifications plus active reminders and shows "9+" above nine.
+- The web refetches notifications every 60 s while the app is open and on window focus (30 s stale time); there are no push or websocket updates in the MVP. The list pages with a keyset cursor like the history (20 per page, "Show older").

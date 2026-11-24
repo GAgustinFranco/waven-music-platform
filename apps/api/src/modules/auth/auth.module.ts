@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { type EnvironmentVariables } from '../../config/env.validation.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
@@ -17,6 +18,7 @@ import { RefreshTokenService } from './refresh-token.service.js';
 @Module({
   imports: [
     UsersModule,
+    NotificationsModule,
     TypeOrmModule.forFeature([RefreshToken]),
     PassportModule.register({ session: false }),
     JwtModule.registerAsync({

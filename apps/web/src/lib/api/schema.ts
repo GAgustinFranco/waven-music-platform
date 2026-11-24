@@ -20,6 +20,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["NotificationsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NotificationsController_markAllRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["NotificationsController_markRead"];
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -772,6 +820,39 @@ export interface components {
             uptime: number;
         };
         /** @enum {string} */
+        NotificationType: "welcome" | "premium-activated";
+        NotificationDto: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["NotificationType"];
+            /** @description Type-specific values; the web renders the copy. */
+            data: {
+                [key: string]: string;
+            } | null;
+            /** Format: date-time */
+            readAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @enum {string} */
+        ReminderType: "verify-email";
+        ReminderDto: {
+            type: components["schemas"]["ReminderType"];
+        };
+        NotificationsPageDto: {
+            /** @description Newest first. */
+            items: components["schemas"]["NotificationDto"][];
+            /**
+             * Format: uuid
+             * @description Pass it as `cursor` for the next page; `null` on the last one.
+             */
+            nextCursor: string | null;
+            /** @description Unread stored notifications, across all pages. */
+            unreadCount: number;
+            /** @description Active reminders; they cannot be marked read and leave once resolved. */
+            reminders: components["schemas"]["ReminderDto"][];
+        };
+        /** @enum {string} */
         Role: "user" | "admin";
         /** @enum {string} */
         Plan: "free" | "premium";
@@ -1387,6 +1468,112 @@ export interface operations {
             };
             /** @description The database is unreachable. */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description The `nextCursor` of the previous page; omit it for the newest notifications. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newest first, with the unread count and the active reminders. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationsPageDto"];
+                };
+            };
+            /** @description Invalid `limit` or `cursor`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_markAllRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every notification is now read. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Read now, or already read. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationDto"];
+                };
+            };
+            /** @description The id is not a UUID. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid access token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `NOTIFICATION_NOT_FOUND`: unknown or not yours. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
