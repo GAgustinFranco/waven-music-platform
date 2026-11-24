@@ -49,6 +49,7 @@ export class CatalogMapper {
       title: album.title,
       slug: album.slug,
       cover: this.imageSet(album.coverKey),
+      dominantColor: album.dominantColor,
     };
   }
 

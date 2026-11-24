@@ -13,6 +13,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { dominantColorStyle } from '@/lib/dominant-color';
 import { selectCurrentTrack, usePlayerStore } from '@/stores/player.store';
 import { PlayPauseButton, TransportControls, VolumeControl } from './controls';
 import { NowPlaying } from './now-playing';
@@ -50,7 +51,11 @@ export function MiniPlayer() {
         <ProgressLine className="absolute inset-x-0 bottom-0" />
       </section>
 
-      <SheetContent className="px-gutter pb-gutter gap-6 pt-2">
+      {/* Tinted with the cover for every plan, as music apps usually do. */}
+      <SheetContent
+        className="dominant-header px-gutter pb-gutter gap-6 pt-2"
+        style={dominantColorStyle(track.album.dominantColor)}
+      >
         <div className="flex items-center justify-between">
           <SheetClose asChild>
             <Button

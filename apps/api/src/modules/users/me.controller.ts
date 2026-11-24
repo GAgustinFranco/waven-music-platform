@@ -1,5 +1,11 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { type AuthUser } from '../auth/auth.types.js';
 import { CurrentUser } from '../auth/decorators/auth.decorators.js';
 import { MeDto, UpdateMeDto } from './dto/user.dto.js';
@@ -28,8 +34,10 @@ export class MeController {
 
   @Patch()
   @ApiOkResponse({ type: MeDto })
+  @ApiForbiddenResponse({ description: '`PREMIUM_REQUIRED`: a theme or backdrop on Free.' })
   async update(@CurrentUser() auth: AuthUser, @Body() body: UpdateMeDto): Promise<MeDto> {
-    const user = await this.users.updateProfile(auth.id, body);
-    return MeDto.fromUser(user, await this.plans.getPlan(auth.id));
+    const plan = await this.plans.getPlan(auth.id);
+    const user = await this.users.updateProfile(auth.id, body, plan);
+    return MeDto.fromUser(user, plan);
   }
 }

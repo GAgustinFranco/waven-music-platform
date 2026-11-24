@@ -79,6 +79,9 @@
           },
           "401": {
             "description": "Missing or invalid access token."
+          },
+          "403": {
+            "description": "`PREMIUM_REQUIRED`: a theme or backdrop on Free."
           }
         },
         "security": [
@@ -2701,6 +2704,49 @@
           "streamQuality"
         ]
       },
+      "Theme": {
+        "type": "string",
+        "enum": [
+          "violet",
+          "dynamic",
+          "ocean",
+          "ember",
+          "rose",
+          "aurora",
+          "sunset",
+          "mono"
+        ]
+      },
+      "Backdrop": {
+        "type": "string",
+        "enum": [
+          "solid",
+          "glow"
+        ]
+      },
+      "AppearanceDto": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Theme"
+              }
+            ]
+          },
+          "backdrop": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Backdrop"
+              }
+            ]
+          }
+        },
+        "required": [
+          "theme",
+          "backdrop"
+        ]
+      },
       "MeDto": {
         "type": "object",
         "properties": {
@@ -2739,6 +2785,22 @@
           },
           "limits": {
             "$ref": "#/components/schemas/PlanLimitsDto"
+          },
+          "appearance": {
+            "description": "What the app shows: the default on Free, whatever is saved.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AppearanceDto"
+              }
+            ]
+          },
+          "savedAppearance": {
+            "description": "The saved choice, kept while the user is on Free.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AppearanceDto"
+              }
+            ]
           }
         },
         "required": [
@@ -2749,7 +2811,9 @@
           "role",
           "createdAt",
           "plan",
-          "limits"
+          "limits",
+          "appearance",
+          "savedAppearance"
         ]
       },
       "UpdateMeDto": {
@@ -2759,6 +2823,22 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 50
+          },
+          "theme": {
+            "description": "Anything but `violet` needs Premium (403 `PREMIUM_REQUIRED`).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Theme"
+              }
+            ]
+          },
+          "backdrop": {
+            "description": "`glow` needs Premium (403 `PREMIUM_REQUIRED`).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Backdrop"
+              }
+            ]
           }
         }
       },
@@ -3326,13 +3406,20 @@
                 "$ref": "#/components/schemas/ImageSetDto"
               }
             ]
+          },
+          "dominantColor": {
+            "type": "string",
+            "nullable": true,
+            "example": "#3a2f6b",
+            "description": "Dominant cover color (hex), darkened for AA contrast with white text."
           }
         },
         "required": [
           "id",
           "title",
           "slug",
-          "cover"
+          "cover",
+          "dominantColor"
         ]
       },
       "TrackDto": {

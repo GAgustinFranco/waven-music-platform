@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSessionReady } from '@/features/auth/use-session-ready';
+import { AppearanceCard } from '@/features/appearance/appearance-card';
 import { SubscriptionCard } from '@/features/billing/subscription-card';
 import type { Me } from '@/lib/api/client';
 import { myPlaylistsQuery } from '@/lib/api/library';
@@ -71,6 +72,7 @@ export function ProfileView() {
         <DisplayNameForm key={user.displayName} me={user} />
         <PlanCard me={user} playlistCount={playlists.data ? playlists.data.total : null} />
         <SubscriptionCard enabled={ready} />
+        <AppearanceCard me={user} />
       </div>
     </div>
   );

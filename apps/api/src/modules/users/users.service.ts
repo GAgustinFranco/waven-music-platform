@@ -1,7 +1,14 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
 import { containsPattern } from '../../common/dto/pagination.dto.js';
+import { type Backdrop, isDefaultAppearance, type Theme } from './appearance.js';
+import { Plan } from './plan.js';
 import { Role, User } from './user.entity.js';
 
 export interface ExternalProfile {
@@ -60,11 +67,32 @@ export class UsersService {
     return this.users.save(user);
   }
 
-  async updateProfile(id: string, changes: { displayName?: string }): Promise<User> {
+  /**
+   * Updates the profile. Choosing anything but the default appearance needs
+   * Premium (403 `PREMIUM_REQUIRED`); going back to the default is always allowed.
+   */
+  async updateProfile(
+    id: string,
+    changes: { displayName?: string; theme?: Theme; backdrop?: Backdrop },
+    plan: Plan,
+  ): Promise<User> {
     const user = await this.findById(id);
+    const appearance = {
+      theme: changes.theme ?? user.theme,
+      backdrop: changes.backdrop ?? user.backdrop,
+    };
+    const changesAppearance = changes.theme !== undefined || changes.backdrop !== undefined;
+    if (changesAppearance && plan !== Plan.Premium && !isDefaultAppearance(appearance)) {
+      throw new ForbiddenException({
+        code: 'PREMIUM_REQUIRED',
+        message: 'Themes are a Premium feature',
+      });
+    }
     if (changes.displayName !== undefined) {
       user.displayName = changes.displayName;
     }
+    user.theme = appearance.theme;
+    user.backdrop = appearance.backdrop;
     return this.users.save(user);
   }
 

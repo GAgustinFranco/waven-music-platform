@@ -52,6 +52,7 @@
 - US-14 As a Free user, I want to upgrade to Premium by paying with Mercado Pago.
 - US-15 As a Premium user, I want to see my subscription status and cancel it.
 - US-16 As a Free user with 5 playlists, I want to see clearly why I cannot create another one and how to upgrade to Premium.
+- US-16b As a Premium user, I want to pick a color theme and backdrop for the app, including one that follows the album playing.
 
 **Administration**
 - US-17 As an admin, I want to create, edit and delete artists, albums (with cover art) and tracks (uploading the audio).
@@ -89,7 +90,7 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 | POST | `/auth/refresh` | cookie | Rotates the refresh token and returns `{ accessToken }`. |
 | POST | `/auth/logout` | cookie | Revokes the token family and clears the cookie. |
 | GET | `/me` | user | Profile + `plan` + current limits. |
-| PATCH | `/me` | user | Updates `displayName`. |
+| PATCH | `/me` | user | Updates `displayName`, `theme` and `backdrop`; a theme or backdrop other than the default needs Premium (403 `PREMIUM_REQUIRED`). |
 
 **Catalog and streaming**
 | Method | Path | Access | Description |
@@ -275,3 +276,9 @@ Authentication: `Bearer` with the access JWT unless stated otherwise. Lists are 
 - Premium users see a "Premium" badge next to the account menu, linking to their profile, where the subscription card shows its status and lets them cancel it.
 - A late or lost webhook does not leave the user waiting: while the newest subscription is `pending`, `GET /billing/subscription` reads its state from Mercado Pago (the preapproval, or an approved payment searched by external reference) and applies it through the same state machine. State still never comes from the client or the payload.
 - A user whose subscription is cancelled but still running can subscribe again ("Subscribe again" on `/premium`). In onetime mode the new pass starts where the running one ends (its pending row carries that end, which grants nothing until a payment is approved), so no paid day is lost.
+- Premium themes (phase 9b) only swap color tokens: each theme is a `[data-theme="…"]` block in `globals.css` next to `:root`, set on `<html>` for the app and on any element for the picker previews (so the shadcn mapping is declared again there). Type, spacing, radii and layout are shared. Every theme keeps text and accent at 4.5:1 or more on its surfaces.
+- Themes: Midnight Violet (default, the only one on Free), Dynamic, Deep Ocean, Ember, Rose Noir, Aurora, Sunset and Studio Mono. Backdrops: Solid (default) and Soft glow, a faint radial light in the theme's color behind the content. An "album tint" backdrop was dropped because it overlapped with Dynamic.
+- The choice is stored on the user (`theme`, `backdrop`). `GET /me` returns `appearance` (what the app shows: the default on Free) and `savedAppearance` (the stored choice, kept after a downgrade so it comes back with Premium). A Free user may always save the default; anything else answers 403 `PREMIUM_REQUIRED`.
+- Dynamic keeps Midnight Violet's surfaces and takes the accent from the dominant color of the album playing (`AlbumRefDto.dominantColor`): it is brightened keeping its hue, then mixed with white if needed, until it reaches 4.5:1 on the dark ground. Covers with a chroma under 0.12 (grays, near-black) keep the violet, as does an empty player. The accent changes without a transition.
+- The last appearance is cached in `localStorage` (`waven-appearance`) and applied before `/me` loads, so a reload does not flash the default; `/me` always wins. The admin panel and the login page keep the default look.
+- The full-screen player (mobile sheet) is tinted with the cover's color on every plan, as music apps usually do; choosing the app's colors is what Premium adds.

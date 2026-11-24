@@ -6,6 +6,7 @@ import { PlayerAnnouncer } from '@/components/player/player-announcer';
 import { PlayerBar } from '@/components/player/player-bar';
 import { Sidebar } from '@/components/layout/sidebar';
 import { UserMenu } from '@/components/layout/user-menu';
+import { AppearanceSync } from '@/features/appearance/appearance-sync';
 import { SessionGate } from '@/features/auth/session-gate';
 import { LibraryProvider } from '@/features/library/library-provider';
 import { PlayerEngine } from '@/features/player/player-engine';
@@ -50,6 +51,7 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
         <BottomNav />
         <PlayerEngine />
         <PlayerAnnouncer />
+        <AppearanceSync />
       </div>
     </LibraryProvider>
   );

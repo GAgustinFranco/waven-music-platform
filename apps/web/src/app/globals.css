@@ -59,6 +59,154 @@
   }
 }
 
+/*
+ * Premium themes. Each one only swaps colors; type, spacing and layout are shared.
+ * `data-theme` goes on <html> (the app) or on any element (picker previews), so
+ * the shadcn mapping is declared again on every themed element.
+ */
+:root,
+[data-theme] {
+  --glow: rgb(139 123 255 / 20%);
+}
+
+/* Midnight Violet again, for previews inside another theme; Dynamic starts from it. */
+[data-theme='violet'],
+[data-theme='dynamic'] {
+  --bg: #0b0b10;
+  --surface: #14141c;
+  --surface-2: #1c1c27;
+  --elevated: #252533;
+  --border: #2e2e3d;
+  --border-strong: #70708a;
+  --text: #f4f4f8;
+  --text-muted: #a1a1b5;
+  --accent: #8b7bff;
+  --accent-hover: #a196ff;
+  --accent-2: #3dd9d6;
+  --scrim: rgb(11 11 16 / 80%);
+  --glow: rgb(139 123 255 / 20%);
+}
+
+[data-theme='ocean'] {
+  --bg: #070d18;
+  --surface: #0f1a2b;
+  --surface-2: #152238;
+  --elevated: #1c2c46;
+  --border: #22324f;
+  --border-strong: #6f82a6;
+  --text: #eef4ff;
+  --text-muted: #9fb0cc;
+  --accent: #5aa9ff;
+  --accent-hover: #84bfff;
+  --accent-2: #a8d0ff;
+  --scrim: rgb(7 13 24 / 80%);
+  --glow: rgb(70 140 255 / 24%);
+}
+
+[data-theme='ember'] {
+  --bg: #110c0a;
+  --surface: #1c1512;
+  --surface-2: #241b17;
+  --elevated: #2e231e;
+  --border: #3a2c25;
+  --border-strong: #8a7466;
+  --text: #fbf1ea;
+  --text-muted: #c2ab9c;
+  --accent: #ff9f4a;
+  --accent-hover: #ffb978;
+  --accent-2: #ffd2a8;
+  --scrim: rgb(17 12 10 / 80%);
+  --glow: rgb(255 120 40 / 22%);
+}
+
+[data-theme='rose'] {
+  --bg: #120a10;
+  --surface: #1e1219;
+  --surface-2: #271821;
+  --elevated: #32202c;
+  --border: #3d2836;
+  --border-strong: #8f7286;
+  --text: #fbeef5;
+  --text-muted: #c3a6b6;
+  --accent: #ff7aa8;
+  --accent-hover: #ff9cc0;
+  --accent-2: #e9b3cc;
+  --scrim: rgb(18 10 16 / 80%);
+  --glow: rgb(255 90 150 / 20%);
+}
+
+[data-theme='aurora'] {
+  --bg: #08101a;
+  --surface: #101a26;
+  --surface-2: #162331;
+  --elevated: #1d2d3e;
+  --border: #233546;
+  --border-strong: #6c8796;
+  --text: #eefaf7;
+  --text-muted: #9fbcb6;
+  --accent: #4fe3c1;
+  --accent-hover: #7eecd3;
+  --accent-2: #a99fff;
+  --scrim: rgb(8 16 26 / 80%);
+  --glow: rgb(79 227 193 / 20%);
+}
+
+[data-theme='sunset'] {
+  --bg: #120b0d;
+  --surface: #1e1416;
+  --surface-2: #281b1e;
+  --elevated: #332327;
+  --border: #3d2a2f;
+  --border-strong: #93777d;
+  --text: #fff1ec;
+  --text-muted: #c9aaa3;
+  --accent: #ff8a6b;
+  --accent-hover: #ffa68f;
+  --accent-2: #ffcf6b;
+  --scrim: rgb(18 11 13 / 80%);
+  --glow: rgb(255 138 107 / 24%);
+}
+
+[data-theme='mono'] {
+  --bg: #0d0d0e;
+  --surface: #18181a;
+  --surface-2: #202023;
+  --elevated: #2a2a2d;
+  --border: #303034;
+  --border-strong: #7a7a80;
+  --text: #f2f2f3;
+  --text-muted: #a3a3a8;
+  --accent: #f2f2f3;
+  --accent-hover: #ffffff;
+  --accent-2: #c9c9cf;
+  --scrim: rgb(13 13 14 / 80%);
+  --glow: rgb(255 255 255 / 7%);
+}
+
+/* Dynamic: the violet base with the accent and glow of the album playing (set from JS). */
+[data-theme='dynamic'] {
+  --accent: var(--dynamic-accent, #8b7bff);
+  --accent-hover: var(--dynamic-accent, #a196ff);
+  --glow: var(--dynamic-glow, rgb(139 123 255 / 20%));
+}
+
+[data-theme] {
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--elevated);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: var(--bg);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+  --input: var(--border-strong);
+  --ring: var(--accent);
+}
+
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text);
@@ -137,6 +285,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  html[data-backdrop='glow'] body {
+    background-image: radial-gradient(1100px 520px at 70% -12%, var(--glow), transparent 70%);
+    background-attachment: fixed;
+  }
   /* Focus is always visible (ARCHITECTURE §7: --focus-ring). */
   :focus-visible {
     outline: 2px solid var(--accent);
@@ -145,6 +297,11 @@
 }
 
 @layer components {
+  /* "Soft glow" backdrop: a faint light in the theme's color behind the content. */
+  .theme-glow {
+    background-image: radial-gradient(1100px 520px at 70% -12%, var(--glow), transparent 70%);
+  }
+
   /* Album/artist header: the API's dominant color (already AA with --text) fading into --bg. */
   .dominant-header {
     background-image: linear-gradient(

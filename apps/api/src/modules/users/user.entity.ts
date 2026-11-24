@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Backdrop, Theme } from './appearance.js';
 
 export enum Role {
   User = 'user',
@@ -31,6 +32,13 @@ export class User {
 
   @Column({ type: 'enum', enum: Role, enumName: 'user_role', default: Role.User })
   role: Role;
+
+  /** The chosen theme; Free users see the default whatever is stored (see appearance.ts). */
+  @Column({ type: 'enum', enum: Theme, enumName: 'app_theme', default: Theme.Violet })
+  theme: Theme;
+
+  @Column({ type: 'enum', enum: Backdrop, enumName: 'app_backdrop', default: Backdrop.Solid })
+  backdrop: Backdrop;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
