@@ -10,10 +10,14 @@ export enum Theme {
   Mono = 'mono',
 }
 
-/** What sits behind the content: a flat color or a soft light in the theme's color. */
+/**
+ * What sits behind the content: a flat color, a soft light in the theme's color,
+ * or slow drifting lights in the theme's colors (Ambient).
+ */
 export enum Backdrop {
   Solid = 'solid',
   Glow = 'glow',
+  Ambient = 'ambient',
 }
 
 export interface Appearance {

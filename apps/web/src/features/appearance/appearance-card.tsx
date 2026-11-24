@@ -68,7 +68,7 @@ export function AppearanceCard({ me }: { me: Me }) {
                   : 'border-border hover:border-input flex flex-col gap-2 rounded-md border-2 p-2 text-left'
               }
             >
-              <ThemePreview theme={option.id} glow={current.backdrop === 'glow'} />
+              <ThemePreview theme={option.id} backdrop={current.backdrop} />
               <span className="flex items-start justify-between gap-2">
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate text-sm font-semibold">{option.name}</span>
@@ -119,7 +119,9 @@ export function AppearanceCard({ me }: { me: Me }) {
 
       {premium ? null : (
         <div className="bg-surface-2 flex flex-col gap-3 rounded-md p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm">Unlock 7 themes, a soft-glow backdrop and the Dynamic theme.</p>
+          <p className="text-sm">
+            Unlock 7 themes, the Soft glow and Ambient backdrops and the Dynamic theme.
+          </p>
           <Button
             asChild
             className="bg-brand text-primary-foreground hover:bg-brand-hover shrink-0"
@@ -136,16 +138,18 @@ export function AppearanceCard({ me }: { me: Me }) {
 }
 
 /** A tiny mock of the app drawn with the theme's own tokens. */
-function ThemePreview({ theme, glow }: { theme: Theme; glow: boolean }) {
+const PREVIEW_BACKDROP: Record<Backdrop, string> = {
+  solid: '',
+  glow: 'theme-glow',
+  ambient: 'theme-ambient',
+};
+
+function ThemePreview({ theme, backdrop }: { theme: Theme; backdrop: Backdrop }) {
   return (
     <span
       aria-hidden="true"
       data-theme={theme}
-      className={
-        glow
-          ? 'theme-glow bg-background flex h-20 overflow-hidden rounded-sm'
-          : 'bg-background flex h-20 overflow-hidden rounded-sm'
-      }
+      className={`${PREVIEW_BACKDROP[backdrop]} bg-background flex h-20 overflow-hidden rounded-sm`}
     >
       <span className="bg-surface w-5" />
       <span className="flex flex-1 flex-col gap-1.5 p-2">

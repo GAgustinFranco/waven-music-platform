@@ -3103,7 +3103,8 @@
         "type": "string",
         "enum": [
           "solid",
-          "glow"
+          "glow",
+          "ambient"
         ]
       },
       "AppearanceDto": {
@@ -3215,7 +3216,7 @@
             ]
           },
           "backdrop": {
-            "description": "`glow` needs Premium (403 `PREMIUM_REQUIRED`).",
+            "description": "`glow` and `ambient` need Premium (403 `PREMIUM_REQUIRED`).",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Backdrop"

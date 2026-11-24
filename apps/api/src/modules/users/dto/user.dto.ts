@@ -112,7 +112,7 @@ export class UpdateMeDto {
   @ApiPropertyOptional({
     enum: Backdrop,
     enumName: 'Backdrop',
-    description: '`glow` needs Premium (403 `PREMIUM_REQUIRED`).',
+    description: '`glow` and `ambient` need Premium (403 `PREMIUM_REQUIRED`).',
   })
   @IsOptional()
   @IsEnum(Backdrop)

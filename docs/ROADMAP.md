@@ -122,7 +122,7 @@ One phase per session. Within each phase, backend first and frontend second. A p
 - Web: theme tokens, soft-glow backdrop, Dynamic accent from the album playing, Appearance picker on the profile, cover-tinted full-screen player for every plan.
 
 **Acceptance criteria**
-- [x] A Premium user switches among 8 themes and 2 backdrops; only colors change.
+- [x] A Premium user switches among 8 themes and 3 backdrops (Solid, Soft glow, Ambient); only colors change.
 - [x] A Free user sees the themes locked, and the API refuses them with 403 `PREMIUM_REQUIRED`.
 - [x] Going back to Free shows the default and keeps the saved choice (e2e test).
 - [x] The Dynamic accent follows the album playing and always passes AA contrast.

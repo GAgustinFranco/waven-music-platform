@@ -64,6 +64,17 @@ describe('Appearance (e2e)', () => {
     expect(response.body.appearance).toEqual({ theme: 'dynamic', backdrop: 'glow' });
   });
 
+  it('saves the Ambient backdrop for a Premium user', async () => {
+    const response = await request(ctx.server)
+      .patch('/me')
+      .set(fan)
+      .send({ backdrop: 'ambient' })
+      .expect(200);
+    expect(response.body.appearance).toEqual({ theme: 'dynamic', backdrop: 'ambient' });
+
+    await request(ctx.server).patch('/me').set(fan).send({ backdrop: 'glow' }).expect(200);
+  });
+
   it('shows the default after going back to Free but keeps the saved choice', async () => {
     await setPremium(false);
 

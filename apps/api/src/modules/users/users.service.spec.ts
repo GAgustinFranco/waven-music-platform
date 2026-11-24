@@ -82,7 +82,19 @@ describe('UsersService.updateProfile (appearance)', () => {
     expect(result).toMatchObject({ theme: Theme.Ember, backdrop: Backdrop.Glow });
   });
 
-  it.each([{ theme: Theme.Ocean }, { backdrop: Backdrop.Glow }])(
+  it('lets a Premium user pick the Ambient backdrop', async () => {
+    const { service } = setup(stored());
+
+    const result = await service.updateProfile(
+      OTHER_ID,
+      { backdrop: Backdrop.Ambient },
+      Plan.Premium,
+    );
+
+    expect(result).toMatchObject({ theme: Theme.Violet, backdrop: Backdrop.Ambient });
+  });
+
+  it.each([{ theme: Theme.Ocean }, { backdrop: Backdrop.Glow }, { backdrop: Backdrop.Ambient }])(
     'refuses %j on the Free plan',
     async (changes) => {
       const { service, repository } = setup(stored());
