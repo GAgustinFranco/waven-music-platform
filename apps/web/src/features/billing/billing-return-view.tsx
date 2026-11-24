@@ -41,7 +41,7 @@ export function BillingReturnView() {
 
   useEffect(() => {
     if (outcome === 'premium') {
-      // The plan, its limits and the stream quality all come from /me.
+      // The plan, its limits and the appearance all come from /me.
       void queryClient.invalidateQueries({ queryKey: meKeys.all });
     }
   }, [outcome, queryClient]);
@@ -51,7 +51,7 @@ export function BillingReturnView() {
       ? {
           icon: <CircleCheck aria-hidden="true" className="text-success size-12" />,
           title: 'Welcome to Premium',
-          body: 'Your payment was confirmed. Enjoy unlimited playlists and 320 kbps audio.',
+          body: 'Your payment was confirmed. Enjoy unlimited playlists and switch themes from your profile.',
         }
       : outcome === 'not-completed'
         ? {

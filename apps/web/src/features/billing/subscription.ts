@@ -1,4 +1,14 @@
-import type { BillingStatus, Subscription } from '@/lib/api/billing';
+import type { BillingStatus, PlanOffer, Subscription } from '@/lib/api/billing';
+
+/** What a plan includes, from its limits. Audio is 320 kbps on every plan. */
+export function planFeatures(limits: PlanOffer['limits']): string[] {
+  return [
+    limits.maxPlaylists === null ? 'Unlimited playlists' : `Up to ${limits.maxPlaylists} playlists`,
+    limits.themes ? 'Switch between themes and backdrops' : 'The classic Waven theme',
+    'High-quality audio (320 kbps)',
+    'Liked Songs and listening history',
+  ];
+}
 
 /** "ARS 2,999" (major units, no decimals when whole). */
 export function formatPrice(amount: number, currency: string): string {

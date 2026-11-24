@@ -215,6 +215,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_verifyEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/login": {
         parameters: {
             query?: never;
@@ -759,12 +775,18 @@ export interface components {
         Role: "user" | "admin";
         /** @enum {string} */
         Plan: "free" | "premium";
-        /** @enum {string} */
+        /**
+         * @description Every plan streams at `high` (320 kbps).
+         * @enum {string}
+         */
         StreamQuality: "std" | "high";
         PlanLimitsDto: {
             /** @description `null` means unlimited. */
             maxPlaylists: number | null;
+            /** @description Every plan streams at `high` (320 kbps). */
             streamQuality: components["schemas"]["StreamQuality"];
+            /** @description Whether the plan can switch themes and backdrops. */
+            themes: boolean;
         };
         /** @enum {string} */
         Theme: "violet" | "dynamic" | "ocean" | "ember" | "rose" | "aurora" | "sunset" | "mono";
@@ -920,6 +942,10 @@ export interface components {
             accessToken: string;
             /** @description Lifetime of the access token in seconds. */
             expiresIn: number;
+        };
+        VerifyEmailDto: {
+            /** @description The token from the verification link. */
+            token: string;
         };
         LoginDto: {
             /** Format: email */
@@ -1844,6 +1870,42 @@ export interface operations {
             };
             /** @description `EMAIL_IN_USE`: an account with this email exists. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description More than 10 auth requests per minute. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_verifyEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyEmailDto"];
+            };
+        };
+        responses: {
+            /** @description Marks the email verified and consumes the token. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `EMAIL_VERIFICATION_INVALID`: unknown, already used or expired token. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3030,7 +3092,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Quality follows the plan (Free = std). */
+            /** @description Quality follows the plan (every plan gets high, 320 kbps). */
             200: {
                 headers: {
                     [name: string]: unknown;

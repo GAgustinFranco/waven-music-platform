@@ -53,6 +53,14 @@ export class RegisterDto {
   displayName: string;
 }
 
+export class VerifyEmailDto {
+  @ApiProperty({ description: 'The token from the verification link.', maxLength: 128 })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(128)
+  token: string;
+}
+
 export class AccessTokenDto {
   @ApiProperty({ description: 'Short-lived JWT. Keep it in memory only.' })
   accessToken: string;

@@ -114,7 +114,7 @@ function UpgradeDialog({
         <DialogTitle>You&apos;ve reached 5 playlists</DialogTitle>
         <DialogDescription>
           The Free plan includes up to 5 playlists. Upgrade to Premium for unlimited playlists and
-          high-quality streaming, or delete a playlist to make room.
+          theme switching, or delete a playlist to make room.
         </DialogDescription>
         <DialogFooter>
           <DialogClose asChild>

@@ -179,7 +179,7 @@ describe('Auth, profile and roles (e2e)', () => {
         displayName: 'Fan',
         role: 'user',
         plan: 'free',
-        limits: { maxPlaylists: 5, streamQuality: 'std' },
+        limits: { maxPlaylists: 5, streamQuality: 'high', themes: false },
       });
     });
 

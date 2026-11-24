@@ -10,8 +10,15 @@ export class PlanLimitsDto {
   @ApiProperty({ type: 'integer', nullable: true, description: '`null` means unlimited.' })
   maxPlaylists: number | null;
 
-  @ApiProperty({ enum: StreamQuality, enumName: 'StreamQuality' })
+  @ApiProperty({
+    enum: StreamQuality,
+    enumName: 'StreamQuality',
+    description: 'Every plan streams at `high` (320 kbps).',
+  })
   streamQuality: StreamQuality;
+
+  @ApiProperty({ description: 'Whether the plan can switch themes and backdrops.' })
+  themes: boolean;
 }
 
 export class UserDto {

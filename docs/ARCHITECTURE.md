@@ -63,6 +63,7 @@ waven-music-platform/
 | Email and password with Node's `crypto.scrypt` | A second way to sign in that issues the same session. Built into Node, so no bcrypt or argon2 dependency (and no native build on Windows). |
 | Refresh cookie `httpOnly; Secure; SameSite=Lax; Path=/api/auth` | Minimal exposure. As CSRF protection, refresh requires an `X-Requested-With` header and a valid `Origin`. |
 | Signed stream token in the query string (HMAC, 1 h) | `<audio>` cannot send an `Authorization` header, and the token is bound to the user, the track and the quality. |
+| `MailDriver` (`log` \| `memory` \| `resend`) | Same idea for email: logs in dev, keeps messages in memory for tests, and Resend's HTTP API in prod (plain `fetch`, no SDK). Sending is fire-and-forget. |
 | `StorageDriver` (`local` \| `s3`) | Same interface (`put`, `getStream(range)`, `getSignedUrl`, `delete`). R2 in prod via `@aws-sdk/client-s3`. |
 | ffmpeg (`ffmpeg-static`) | Transcodes to 128 and 320 kbps MP3. The binary is bundled so it does not depend on the system (Windows and Render). |
 | In-process job queue, with state in the database | Transcoding is occasional and does not justify Redis or BullMQ. `Track.status` reflects progress. |

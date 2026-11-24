@@ -13,19 +13,20 @@ export function AuthBootstrap() {
   const status = useAuthStore((state) => state.status);
   const pathname = usePathname();
   const router = useRouter();
-  const onLoginPage = pathname === '/login';
+  // /verify-email works without a session, so it never sends anyone to /login.
+  const onPublicPage = pathname === '/login' || pathname === '/verify-email';
 
   useEffect(() => {
-    if (status === 'unknown' && !onLoginPage) {
+    if (status === 'unknown' && !onPublicPage) {
       void refreshAccessToken();
     }
-  }, [status, onLoginPage]);
+  }, [status, onPublicPage]);
 
   useEffect(() => {
-    if (status === 'anonymous' && !onLoginPage) {
+    if (status === 'anonymous' && !onPublicPage) {
       router.replace('/login');
     }
-  }, [status, onLoginPage, router]);
+  }, [status, onPublicPage, router]);
 
   return null;
 }

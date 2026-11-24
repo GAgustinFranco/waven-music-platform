@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Gem, Gauge, ListMusic } from 'lucide-react';
+import { Gem, ListMusic, Palette } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useId, useState } from 'react';
 import { toast } from 'sonner';
@@ -163,7 +163,7 @@ function DisplayNameForm({ me }: { me: Me }) {
 
 function PlanCard({ me, playlistCount }: { me: Me; playlistCount: number | null }) {
   const id = useId();
-  const { playlists, quality, atLimit } = describePlan(me.limits, playlistCount);
+  const { playlists, themes, atLimit } = describePlan(me.limits, playlistCount);
   const premium = me.plan === 'premium';
 
   return (
@@ -213,10 +213,10 @@ function PlanCard({ me, playlistCount }: { me: Me; playlistCount: number | null 
         </div>
         <div className="flex items-center justify-between gap-3 text-sm">
           <dt className="flex items-center gap-2 font-medium">
-            <Gauge aria-hidden="true" className="text-muted-foreground size-4" />
-            Streaming quality
+            <Palette aria-hidden="true" className="text-muted-foreground size-4" />
+            Themes
           </dt>
-          <dd className="text-muted-foreground">{quality}</dd>
+          <dd className="text-muted-foreground">{themes}</dd>
         </div>
       </dl>
 
@@ -225,7 +225,7 @@ function PlanCard({ me, playlistCount }: { me: Me; playlistCount: number | null 
           <p className="text-sm">
             {atLimit
               ? 'You’ve used all your playlists. Premium removes the limit.'
-              : 'Unlimited playlists and 320 kbps audio with Premium.'}
+              : 'Unlimited playlists and theme switching with Premium.'}
           </p>
           <Button
             asChild

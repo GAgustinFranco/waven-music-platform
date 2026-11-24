@@ -38,7 +38,7 @@ import {
 } from './auth.cookies.js';
 import { AuthService } from './auth.service.js';
 import { Public } from './decorators/auth.decorators.js';
-import { AccessTokenDto, LoginDto, RegisterDto } from './dto/auth.dto.js';
+import { AccessTokenDto, LoginDto, RegisterDto, VerifyEmailDto } from './dto/auth.dto.js';
 import { GoogleAuthGuard, OAuthFailureFilter } from './google/google-auth.guard.js';
 
 /** Strict limit on every auth route (the global one is 100/min). */
@@ -104,6 +104,18 @@ export class AuthController {
     const { user, refresh } = await this.auth.register(body, userAgentOf(req));
     setSessionCookies(res, refresh, this.auth.secureCookies);
     return this.auth.signAccessToken(user);
+  }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Marks the email verified and consumes the token.' })
+  @ApiBadRequestResponse({
+    description: '`EMAIL_VERIFICATION_INVALID`: unknown, already used or expired token.',
+  })
+  @ApiTooManyRequestsResponse({ description: 'More than 10 auth requests per minute.' })
+  verifyEmail(@Body() body: VerifyEmailDto): Promise<void> {
+    // No session or origin check: the single-use token is the credential.
+    return this.auth.verifyEmail(body.token);
   }
 
   @Post('login')

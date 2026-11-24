@@ -3,9 +3,11 @@ import { type ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { type Request } from 'express';
 import { type EnvironmentVariables } from '../../config/env.validation.js';
+import { type MailService } from '../mail/mail.service.js';
 import { Role, type User } from '../users/user.entity.js';
 import { type UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
+import { hashVerificationToken } from './email-verification.js';
 import { type PasswordHasher } from './password/password-hasher.js';
 import { type RefreshTokenService } from './refresh-token.service.js';
 
@@ -15,23 +17,36 @@ const env: Partial<EnvironmentVariables> = {
   WEB_URL: 'http://localhost:3000',
 };
 
-function setup(options: { passwordRemoved?: boolean; stored?: User | null } = {}) {
+function setup(
+  options: { passwordRemoved?: boolean; created?: boolean; stored?: User | null } = {},
+) {
   const users = {
-    upsertFromProvider: vi.fn((_profile: unknown, upsert: { grantAdmin: boolean }) =>
+    upsertFromProvider: vi.fn((profile: { email: string }, upsert: { grantAdmin: boolean }) =>
       Promise.resolve({
-        user: { id: 'user-1', role: upsert.grantAdmin ? Role.Admin : Role.User } as User,
+        user: {
+          id: 'user-1',
+          email: profile.email.toLowerCase(),
+          displayName: 'Someone',
+          role: upsert.grantAdmin ? Role.Admin : Role.User,
+        } as User,
         passwordRemoved: options.passwordRemoved ?? false,
+        created: options.created ?? false,
       }),
     ),
     createWithPassword: vi.fn(
-      (input: { email: string; passwordHash: string }, upsert: { grantAdmin: boolean }) =>
+      (
+        input: { email: string; displayName: string; passwordHash: string },
+        upsert: { grantAdmin: boolean },
+      ) =>
         Promise.resolve({
           id: 'user-2',
           email: input.email,
+          displayName: input.displayName,
           passwordHash: input.passwordHash,
           role: upsert.grantAdmin ? Role.Admin : Role.User,
         } as User),
     ),
+    verifyEmail: vi.fn().mockResolvedValue(true),
     findByEmail: vi.fn().mockResolvedValue(options.stored ?? null),
     grantAdmin: vi.fn((user: User) => Promise.resolve({ ...user, role: Role.Admin } as User)),
   };
@@ -48,14 +63,16 @@ function setup(options: { passwordRemoved?: boolean; stored?: User | null } = {}
   };
   const config = { get: vi.fn((key: keyof EnvironmentVariables) => env[key]) };
   const jwt = new JwtService({ secret: 'x'.repeat(32) });
+  const mail = { send: vi.fn().mockResolvedValue(undefined) };
   const service = new AuthService(
     users as unknown as UsersService,
     refreshTokens as unknown as RefreshTokenService,
     jwt,
     config as unknown as ConfigService<EnvironmentVariables, true>,
     passwords as unknown as PasswordHasher,
+    mail as unknown as MailService,
   );
-  return { service, users, refreshTokens, passwords, jwt };
+  return { service, users, refreshTokens, passwords, jwt, mail };
 }
 
 const profile = (email: string) => ({
@@ -110,7 +127,15 @@ describe('AuthService', () => {
       );
 
       expect(users.createWithPassword).toHaveBeenCalledWith(
-        { email: 'new@example.com', displayName: 'New', passwordHash: 'hashed:long enough' },
+        {
+          email: 'new@example.com',
+          displayName: 'New',
+          passwordHash: 'hashed:long enough',
+          emailVerification: {
+            tokenHash: expect.stringMatching(/^[0-9a-f]{64}$/) as unknown,
+            expiresAt: expect.any(Date) as unknown,
+          },
+        },
         { grantAdmin: false },
       );
       expect(user.role).toBe(Role.User);
@@ -126,6 +151,68 @@ describe('AuthService', () => {
       );
 
       expect(user.role).toBe(Role.Admin);
+    });
+  });
+
+  describe('welcome and verification emails', () => {
+    it('sends a welcome with a one-click link whose token matches the stored hash', async () => {
+      const { service, users, mail } = setup();
+
+      await service.register(
+        { email: 'new@example.com', password: 'long enough', displayName: 'New' },
+        null,
+      );
+
+      expect(mail.send).toHaveBeenCalledOnce();
+      const [to, template, content] = mail.send.mock.calls[0] as [
+        string,
+        string,
+        { subject: string; text: string },
+      ];
+      expect([to, template, content.subject]).toEqual([
+        'new@example.com',
+        'welcome',
+        'Welcome to Waven',
+      ]);
+      const link = /http:\/\/localhost:3000\/verify-email\?token=([\w-]+)/.exec(content.text);
+      const [input] = users.createWithPassword.mock.calls[0] as unknown as [
+        { emailVerification: { tokenHash: string; expiresAt: Date } },
+      ];
+      expect(hashVerificationToken(link?.[1] ?? '')).toBe(input.emailVerification.tokenHash);
+      const ttl = input.emailVerification.expiresAt.getTime() - Date.now();
+      expect(ttl).toBeGreaterThan(23 * 60 * 60 * 1000);
+      expect(ttl).toBeLessThanOrEqual(24 * 60 * 60 * 1000);
+    });
+
+    it('welcomes a new Google account without a verification link', async () => {
+      const { service, mail } = setup({ created: true });
+
+      await service.login(profile('fan@example.com'), null);
+
+      expect(mail.send).toHaveBeenCalledOnce();
+      const [, , content] = mail.send.mock.calls[0] as [string, string, { text: string }];
+      expect(content.text).not.toContain('verify-email');
+    });
+
+    it('does not welcome a returning Google user', async () => {
+      const { service, mail } = setup({ created: false });
+
+      await service.login(profile('fan@example.com'), null);
+
+      expect(mail.send).not.toHaveBeenCalled();
+    });
+
+    it('verifies with the hash of the token and rejects an invalid one', async () => {
+      const { service, users } = setup();
+
+      await service.verifyEmail('the-token');
+      expect(users.verifyEmail).toHaveBeenCalledWith(hashVerificationToken('the-token'));
+
+      users.verifyEmail.mockResolvedValueOnce(false);
+      await expect(service.verifyEmail('used')).rejects.toMatchObject({
+        status: 400,
+        response: { code: 'EMAIL_VERIFICATION_INVALID' },
+      });
     });
   });
 

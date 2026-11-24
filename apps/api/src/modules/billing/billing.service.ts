@@ -10,6 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, type EntityManager, In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { type EnvironmentVariables } from '../../config/env.validation.js';
+import { MailService } from '../mail/mail.service.js';
+import { premiumWelcomeEmail } from '../mail/mail.templates.js';
 import { PLAN_LIMITS, Plan } from '../users/plan.js';
 import { User } from '../users/user.entity.js';
 import { applyProviderUpdate } from './apply-provider-update.js';
@@ -40,6 +42,7 @@ export class BillingService {
   private readonly logger = new Logger(BillingService.name);
   private readonly backUrl: string;
   private readonly testPayerEmail: string | undefined;
+  private readonly webUrl: string;
 
   constructor(
     @InjectRepository(Subscription) private readonly subscriptions: Repository<Subscription>,
@@ -47,8 +50,10 @@ export class BillingService {
     private readonly dataSource: DataSource,
     private readonly providers: PaymentProviders,
     private readonly plans: PlanService,
+    private readonly mail: MailService,
     config: ConfigService<EnvironmentVariables, true>,
   ) {
+    this.webUrl = config.get('WEB_URL', { infer: true }).replace(/\/+$/, '');
     // Mercado Pago needs a public https URL; GET /billing/return forwards to WEB_URL.
     const origin =
       config.get('MP_PUBLIC_URL', { infer: true }) ?? config.get('WEB_URL', { infer: true });
@@ -194,19 +199,25 @@ export class BillingService {
     return this.getStatus(userId);
   }
 
-  /** Applies an update read from the provider, inside the webhook's transaction. */
+  /**
+   * Applies an update read from the provider, inside the webhook's transaction.
+   * Returns the subscription when this update activated it (`pending` →
+   * `authorized`), so the caller sends the Premium welcome after the commit.
+   * The row lock and the state machine (nothing goes back to `pending`) make
+   * that happen once per subscription, whatever the retries or the sync race.
+   */
   async applyUpdate(
     manager: EntityManager,
     update: ProviderUpdate,
     providerMode: PaymentMode,
-  ): Promise<void> {
+  ): Promise<Subscription | null> {
     const subscription = await this.lock(manager, update.subscriptionId);
     if (!subscription) {
       this.logger.warn(
         { subscriptionId: update.subscriptionId },
         'Update for an unknown subscription',
       );
-      return;
+      return null;
     }
     const from = subscription.status;
     const result = applyProviderUpdate(subscription, update, providerMode);
@@ -215,13 +226,37 @@ export class BillingService {
         { subscriptionId: subscription.id, from, to: update.status, result },
         'Subscription update ignored',
       );
-      return;
+      return null;
     }
     await manager.save(subscription);
     this.logger.log(
       { subscriptionId: subscription.id, from, to: subscription.status },
       'Subscription updated',
     );
+    return from === Pending && subscription.status === Authorized ? subscription : null;
+  }
+
+  /** Fire-and-forget Premium welcome; call it only after the activation committed. */
+  sendPremiumWelcome(subscription: Pick<Subscription, 'id' | 'userId'>): void {
+    const send = async () => {
+      const user = await this.users.findOneBy({ id: subscription.userId });
+      if (user) {
+        await this.mail.send(
+          user.email,
+          'premium-welcome',
+          premiumWelcomeEmail({ displayName: user.displayName, appUrl: `${this.webUrl}/` }),
+        );
+      }
+    };
+    send().catch((error: unknown) => {
+      this.logger.error(
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          subscriptionId: subscription.id,
+        },
+        'Premium welcome could not be sent',
+      );
+    });
   }
 
   /**
@@ -241,9 +276,12 @@ export class BillingService {
     try {
       const update = await provider.sync(pending.id, pending.externalId);
       if (update && update.subscriptionId === pending.id) {
-        await this.dataSource.transaction((manager) =>
+        const activated = await this.dataSource.transaction((manager) =>
           this.applyUpdate(manager, update, provider.mode),
         );
+        if (activated) {
+          this.sendPremiumWelcome(activated);
+        }
       }
     } catch (error) {
       this.logger.warn({ err: error, subscriptionId: pending.id }, 'Pending sync failed');

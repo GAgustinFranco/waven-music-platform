@@ -123,6 +123,8 @@ describe('effectiveAppearance', () => {
   });
 });
 
+const verification = { tokenHash: 'a'.repeat(64), expiresAt: new Date('2026-11-25T00:00:00Z') };
+
 describe('UsersService sign-up and Google sign-in', () => {
   function setupAccounts(byGoogleId: User | null, byEmail: User | null) {
     const repository = {
@@ -130,6 +132,7 @@ describe('UsersService sign-up and Google sign-in', () => {
         Promise.resolve(where.googleId !== undefined ? byGoogleId : byEmail),
       ),
       existsBy: vi.fn().mockResolvedValue(byEmail !== null),
+      update: vi.fn().mockResolvedValue({ affected: 1 }),
       create: vi.fn((fields: Partial<User>) => ({ ...fields }) as User),
       save: vi.fn((user: User) => Promise.resolve(user)),
     };
@@ -148,7 +151,12 @@ describe('UsersService sign-up and Google sign-in', () => {
     const { service } = setupAccounts(null, null);
 
     const created = await service.createWithPassword(
-      { email: 'New@Example.com', displayName: 'New', passwordHash: 'hash' },
+      {
+        email: 'New@Example.com',
+        displayName: 'New',
+        passwordHash: 'hash',
+        emailVerification: verification,
+      },
       { grantAdmin: false },
     );
 
@@ -157,6 +165,9 @@ describe('UsersService sign-up and Google sign-in', () => {
       googleId: null,
       passwordHash: 'hash',
       role: Role.User,
+      emailVerifiedAt: null,
+      emailVerificationTokenHash: verification.tokenHash,
+      emailVerificationExpiresAt: verification.expiresAt,
     });
   });
 
@@ -165,27 +176,61 @@ describe('UsersService sign-up and Google sign-in', () => {
 
     await expect(
       service.createWithPassword(
-        { email: 'fan@example.com', displayName: 'Fan', passwordHash: 'hash' },
+        {
+          email: 'fan@example.com',
+          displayName: 'Fan',
+          passwordHash: 'hash',
+          emailVerification: verification,
+        },
         { grantAdmin: false },
       ),
     ).rejects.toMatchObject({ response: { code: 'EMAIL_IN_USE' } });
     expect(repository.save).not.toHaveBeenCalled();
   });
 
+  it('creates a verified account at the first Google sign-in', async () => {
+    const { service } = setupAccounts(null, null);
+
+    const { user: signedIn, created } = await service.upsertFromProvider(google, {
+      grantAdmin: false,
+    });
+
+    expect(created).toBe(true);
+    expect(signedIn.emailVerifiedAt).toBeInstanceOf(Date);
+  });
+
   it('keeps a Google account as it is', async () => {
-    const existing = { id: OTHER_ID, googleId: 'g-1', passwordHash: null } as User;
+    const verifiedAt = new Date('2026-01-01T00:00:00Z');
+    const existing = {
+      id: OTHER_ID,
+      googleId: 'g-1',
+      passwordHash: null,
+      emailVerifiedAt: verifiedAt,
+    } as User;
     const { service } = setupAccounts(existing, existing);
 
-    const { user: signedIn, passwordRemoved } = await service.upsertFromProvider(google, {
+    const {
+      user: signedIn,
+      passwordRemoved,
+      created,
+    } = await service.upsertFromProvider(google, {
       grantAdmin: false,
     });
 
     expect(passwordRemoved).toBe(false);
+    expect(created).toBe(false);
+    expect(signedIn.emailVerifiedAt).toBe(verifiedAt);
     expect(signedIn).toMatchObject({ googleId: 'g-1', email: 'fan@example.com' });
   });
 
   it('takes over a password-only account with the same email and removes the password', async () => {
-    const existing = { id: OTHER_ID, googleId: null, passwordHash: 'hash' } as User;
+    const existing = {
+      id: OTHER_ID,
+      googleId: null,
+      passwordHash: 'hash',
+      emailVerifiedAt: null,
+      emailVerificationTokenHash: verification.tokenHash,
+    } as User;
     const { service } = setupAccounts(null, existing);
 
     const { user: signedIn, passwordRemoved } = await service.upsertFromProvider(google, {
@@ -193,6 +238,33 @@ describe('UsersService sign-up and Google sign-in', () => {
     });
 
     expect(passwordRemoved).toBe(true);
-    expect(signedIn).toMatchObject({ id: OTHER_ID, googleId: 'g-1', passwordHash: null });
+    expect(signedIn).toMatchObject({
+      id: OTHER_ID,
+      googleId: 'g-1',
+      passwordHash: null,
+      emailVerificationTokenHash: null,
+    });
+    expect(signedIn.emailVerifiedAt).toBeInstanceOf(Date);
+  });
+
+  it('verifies only through an unexpired token and consumes it', async () => {
+    const { service, repository } = setupAccounts(null, null);
+    const now = new Date('2026-11-24T12:00:00Z');
+
+    await expect(service.verifyEmail(verification.tokenHash, now)).resolves.toBe(true);
+    const [where, changes] = repository.update.mock.calls[0] as [
+      { emailVerificationTokenHash: string; emailVerificationExpiresAt: { value: Date } },
+      Partial<User>,
+    ];
+    expect(where.emailVerificationTokenHash).toBe(verification.tokenHash);
+    expect(where.emailVerificationExpiresAt.value).toBe(now);
+    expect(changes).toEqual({
+      emailVerifiedAt: now,
+      emailVerificationTokenHash: null,
+      emailVerificationExpiresAt: null,
+    });
+
+    repository.update.mockResolvedValueOnce({ affected: 0 });
+    await expect(service.verifyEmail(verification.tokenHash, now)).resolves.toBe(false);
   });
 });

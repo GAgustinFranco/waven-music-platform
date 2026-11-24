@@ -575,6 +575,36 @@
         ]
       }
     },
+    "/auth/verify-email": {
+      "post": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Marks the email verified and consumes the token."
+          },
+          "400": {
+            "description": "`EMAIL_VERIFICATION_INVALID`: unknown, already used or expired token."
+          },
+          "429": {
+            "description": "More than 10 auth requests per minute."
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "AuthController_login",
@@ -1913,7 +1943,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Quality follows the plan (Free = std).",
+            "description": "Quality follows the plan (every plan gets high, 320 kbps).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2803,7 +2833,8 @@
         "enum": [
           "std",
           "high"
-        ]
+        ],
+        "description": "Every plan streams at `high` (320 kbps)."
       },
       "PlanLimitsDto": {
         "type": "object",
@@ -2814,16 +2845,22 @@
             "description": "`null` means unlimited."
           },
           "streamQuality": {
+            "description": "Every plan streams at `high` (320 kbps).",
             "allOf": [
               {
                 "$ref": "#/components/schemas/StreamQuality"
               }
             ]
+          },
+          "themes": {
+            "type": "boolean",
+            "description": "Whether the plan can switch themes and backdrops."
           }
         },
         "required": [
           "maxPlaylists",
-          "streamQuality"
+          "streamQuality",
+          "themes"
         ]
       },
       "Theme": {
@@ -3386,6 +3423,19 @@
         "required": [
           "accessToken",
           "expiresIn"
+        ]
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The token from the verification link.",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "LoginDto": {

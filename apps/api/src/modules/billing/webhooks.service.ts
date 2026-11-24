@@ -13,6 +13,7 @@ import { isRecord, readId } from './mercadopago/mercadopago.client.js';
 import { verifyMercadoPagoSignature } from './mercadopago/mercadopago-signature.js';
 import { MERCADO_PAGO } from './payment-provider.js';
 import { PaymentProviders } from './payment-providers.service.js';
+import { type Subscription } from './subscription.entity.js';
 import { WebhookEvent } from './webhook-event.entity.js';
 
 export interface IncomingWebhook {
@@ -84,8 +85,10 @@ export class WebhooksService {
       [MERCADO_PAGO, eventId, type.slice(0, 64), JSON.stringify(body)],
     );
 
+    let result: WebhookResult;
+    let activated: Subscription | null = null;
     try {
-      return await this.dataSource.transaction(async (manager) => {
+      result = await this.dataSource.transaction(async (manager) => {
         const event = await manager.findOneOrFail(WebhookEvent, {
           where: { provider: MERCADO_PAGO, externalEventId: eventId },
           lock: { mode: 'pessimistic_write' },
@@ -96,7 +99,7 @@ export class WebhooksService {
         const provider = this.providers.forNotification(type);
         const update = provider ? await provider.fetchUpdate(type, dataId) : null;
         if (provider && update) {
-          await this.billing.applyUpdate(manager, update, provider.mode);
+          activated = await this.billing.applyUpdate(manager, update, provider.mode);
         }
         event.processedAt = new Date();
         event.error = null;
@@ -116,5 +119,10 @@ export class WebhooksService {
         message: 'The notification could not be processed',
       });
     }
+    // Only once the activation is committed, and never in the way of the answer.
+    if (activated) {
+      this.billing.sendPremiumWelcome(activated);
+    }
+    return result;
   }
 }

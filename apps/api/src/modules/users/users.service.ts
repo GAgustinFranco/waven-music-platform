@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, QueryFailedError, Repository } from 'typeorm';
+import { Brackets, MoreThan, QueryFailedError, Repository } from 'typeorm';
 import { containsPattern } from '../../common/dto/pagination.dto.js';
 import { type Backdrop, isDefaultAppearance, type Theme } from './appearance.js';
 import { Plan } from './plan.js';
@@ -27,6 +27,14 @@ export interface ProviderLogin {
   user: User;
   /** True when Google took over a password-only account with the same email. */
   passwordRemoved: boolean;
+  /** True on the first sign-in, when the account was just created. */
+  created: boolean;
+}
+
+/** A pending one-click verification: only the token's hash is stored. */
+export interface EmailVerification {
+  tokenHash: string;
+  expiresAt: Date;
 }
 
 const MAX_DISPLAY_NAME = 50;
@@ -92,7 +100,11 @@ export class UsersService {
     const passwordRemoved = existing !== null && existing.googleId === null;
     if (passwordRemoved) {
       user.passwordHash = null;
+      user.emailVerificationTokenHash = null;
+      user.emailVerificationExpiresAt = null;
     }
+    // Google only hands out verified emails.
+    user.emailVerifiedAt ??= new Date();
     user.googleId = profile.googleId;
     user.email = email;
     user.avatarUrl = profile.avatarUrl;
@@ -100,12 +112,17 @@ export class UsersService {
       user.role = Role.Admin;
     }
 
-    return { user: await this.users.save(user), passwordRemoved };
+    return { user: await this.users.save(user), passwordRemoved, created: existing === null };
   }
 
   /** Signs up with an email and a password; 409 `EMAIL_IN_USE` if the email is taken. */
   async createWithPassword(
-    input: { email: string; displayName: string; passwordHash: string },
+    input: {
+      email: string;
+      displayName: string;
+      passwordHash: string;
+      emailVerification: EmailVerification;
+    },
     options: UpsertOptions,
   ): Promise<User> {
     const email = input.email.toLowerCase();
@@ -119,6 +136,9 @@ export class UsersService {
       displayName: input.displayName.slice(0, MAX_DISPLAY_NAME),
       avatarUrl: null,
       role: options.grantAdmin ? Role.Admin : Role.User,
+      emailVerifiedAt: null,
+      emailVerificationTokenHash: input.emailVerification.tokenHash,
+      emailVerificationExpiresAt: input.emailVerification.expiresAt,
     });
     try {
       return await this.users.save(user);
@@ -129,6 +149,18 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Marks the email verified if `tokenHash` belongs to an unexpired token, and
+   * consumes it in the same statement, so a token works once. False otherwise.
+   */
+  async verifyEmail(tokenHash: string, now = new Date()): Promise<boolean> {
+    const result = await this.users.update(
+      { emailVerificationTokenHash: tokenHash, emailVerificationExpiresAt: MoreThan(now) },
+      { emailVerifiedAt: now, emailVerificationTokenHash: null, emailVerificationExpiresAt: null },
+    );
+    return (result.affected ?? 0) > 0;
   }
 
   /** Grants the admin role (used at password login, like `upsertFromProvider`). */
