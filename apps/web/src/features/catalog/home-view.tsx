@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, LoadingStatus } from '@/components/catalog/stat
 import { TrackList, TrackListSkeleton, TrackRow } from '@/components/catalog/track-row';
 import { useSessionReady } from '@/features/auth/use-session-ready';
 import { useLikedSet } from '@/features/library/use-liked';
+import { type HeroPick, HomeHero } from './hero/home-hero';
 import { homeQuery } from '@/lib/api/catalog';
 import { releaseYear } from '@/lib/format';
 import { type PlaySource, usePlayerStore } from '@/stores/player.store';
@@ -26,115 +27,137 @@ export function HomeView() {
     [...(data?.popularTracks ?? []), ...(data?.recentlyPlayed ?? [])].map((track) => track.id),
   );
 
+  const resume = (data?.recentlyPlayed.length ?? 0) > 0;
+  const picks: HeroPick[] = resume
+    ? uniqueAlbums((data?.recentlyPlayed ?? []).map((track) => track.album))
+    : (data?.newReleases ?? []).slice(0, 3).map(({ id, title, cover }) => ({ id, title, cover }));
+
   return (
-    <div className="px-gutter lg:px-gutter-lg flex flex-col gap-10 pt-20">
-      <h1 className="text-3xl font-bold tracking-tight">Home</h1>
+    <div className="flex flex-col">
+      <HomeHero picks={picks} resume={resume} />
+      <div className="px-gutter lg:px-gutter-lg flex flex-col gap-10 pt-4">
+        {isPending ? (
+          <>
+            <LoadingStatus label="Loading your home page" />
+            <Section id="new-releases" title="New releases">
+              <MediaGridSkeleton />
+            </Section>
+            <Section id="popular" title="Popular tracks">
+              <TrackListSkeleton />
+            </Section>
+          </>
+        ) : isError ? (
+          <ErrorState onRetry={() => void refetch()} retrying={isRefetching} />
+        ) : (
+          <>
+            <Section id="new-releases" title="New releases">
+              {data.newReleases.length > 0 ? (
+                <MediaGrid label="New releases">
+                  {data.newReleases.map((album) => (
+                    <li key={album.id}>
+                      <MediaCard
+                        href={`/albums/${album.id}`}
+                        title={album.title}
+                        subtitle={[releaseYear(album.releaseDate), album.artist.name]
+                          .filter(Boolean)
+                          .join(' · ')}
+                        image={album.cover}
+                      />
+                    </li>
+                  ))}
+                </MediaGrid>
+              ) : (
+                <EmptyState
+                  icon={Disc3}
+                  as="h3"
+                  title="No releases yet"
+                  description="New albums will show up here as soon as they are added."
+                />
+              )}
+            </Section>
 
-      {isPending ? (
-        <>
-          <LoadingStatus label="Loading your home page" />
-          <Section id="new-releases" title="New releases">
-            <MediaGridSkeleton />
-          </Section>
-          <Section id="popular" title="Popular tracks">
-            <TrackListSkeleton />
-          </Section>
-        </>
-      ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} retrying={isRefetching} />
-      ) : (
-        <>
-          <Section id="new-releases" title="New releases">
-            {data.newReleases.length > 0 ? (
-              <MediaGrid label="New releases">
-                {data.newReleases.map((album) => (
-                  <li key={album.id}>
-                    <MediaCard
-                      href={`/albums/${album.id}`}
-                      title={album.title}
-                      subtitle={[releaseYear(album.releaseDate), album.artist.name]
-                        .filter(Boolean)
-                        .join(' · ')}
-                      image={album.cover}
+            <Section id="popular" title="Popular tracks">
+              {data.popularTracks.length > 0 ? (
+                <TrackList label="Popular tracks">
+                  {data.popularTracks.map((track, index) => (
+                    <TrackRow
+                      key={track.id}
+                      track={track}
+                      position={index + 1}
+                      showCover
+                      showAlbum
+                      onPlay={() => playQueue(data.popularTracks, index, HOME)}
+                      liked={liked?.has(track.id)}
                     />
-                  </li>
-                ))}
-              </MediaGrid>
-            ) : (
-              <EmptyState
-                icon={Disc3}
-                as="h3"
-                title="No releases yet"
-                description="New albums will show up here as soon as they are added."
-              />
-            )}
-          </Section>
+                  ))}
+                </TrackList>
+              ) : (
+                <EmptyState
+                  icon={ListMusic}
+                  as="h3"
+                  title="Nothing popular yet"
+                  description="The most played tracks will appear here."
+                />
+              )}
+            </Section>
 
-          <Section id="popular" title="Popular tracks">
-            {data.popularTracks.length > 0 ? (
-              <TrackList label="Popular tracks">
-                {data.popularTracks.map((track, index) => (
-                  <TrackRow
-                    key={track.id}
-                    track={track}
-                    position={index + 1}
-                    showCover
-                    showAlbum
-                    onPlay={() => playQueue(data.popularTracks, index, HOME)}
-                    liked={liked?.has(track.id)}
-                  />
-                ))}
-              </TrackList>
-            ) : (
-              <EmptyState
-                icon={ListMusic}
-                as="h3"
-                title="Nothing popular yet"
-                description="The most played tracks will appear here."
-              />
-            )}
-          </Section>
-
-          <Section
-            id="recently-played"
-            title="Recently played"
-            action={
-              data.recentlyPlayed.length > 0 ? (
-                <Link
-                  href="/history"
-                  className="text-muted-foreground hover:text-foreground rounded-sm text-sm font-medium"
-                >
-                  Show all
-                  <span className="sr-only"> listening history</span>
-                </Link>
-              ) : null
-            }
-          >
-            {data.recentlyPlayed.length > 0 ? (
-              <TrackList label="Recently played">
-                {data.recentlyPlayed.map((track, index) => (
-                  <TrackRow
-                    key={track.id}
-                    track={track}
-                    position={index + 1}
-                    showCover
-                    showAlbum
-                    onPlay={() => playQueue(data.recentlyPlayed, index, HOME)}
-                    liked={liked?.has(track.id)}
-                  />
-                ))}
-              </TrackList>
-            ) : (
-              <EmptyState
-                icon={History}
-                as="h3"
-                title="No listening history yet"
-                description="Tracks you play will show up here so you can jump back in."
-              />
-            )}
-          </Section>
-        </>
-      )}
+            <Section
+              id="recently-played"
+              title="Recently played"
+              action={
+                data.recentlyPlayed.length > 0 ? (
+                  <Link
+                    href="/history"
+                    className="text-muted-foreground hover:text-foreground rounded-sm text-sm font-medium"
+                  >
+                    Show all
+                    <span className="sr-only"> listening history</span>
+                  </Link>
+                ) : null
+              }
+            >
+              {data.recentlyPlayed.length > 0 ? (
+                <TrackList label="Recently played">
+                  {data.recentlyPlayed.map((track, index) => (
+                    <TrackRow
+                      key={track.id}
+                      track={track}
+                      position={index + 1}
+                      showCover
+                      showAlbum
+                      onPlay={() => playQueue(data.recentlyPlayed, index, HOME)}
+                      liked={liked?.has(track.id)}
+                    />
+                  ))}
+                </TrackList>
+              ) : (
+                <EmptyState
+                  icon={History}
+                  as="h3"
+                  title="No listening history yet"
+                  description="Tracks you play will show up here so you can jump back in."
+                />
+              )}
+            </Section>
+          </>
+        )}
+      </div>
     </div>
   );
+}
+
+/** Up to three albums, in the order they were last played. */
+function uniqueAlbums(albums: readonly HeroPick[]): HeroPick[] {
+  const seen = new Set<string>();
+  const picks: HeroPick[] = [];
+  for (const { id, title, cover } of albums) {
+    if (!seen.has(id)) {
+      seen.add(id);
+      picks.push({ id, title, cover });
+    }
+    if (picks.length === 3) {
+      break;
+    }
+  }
+  return picks;
 }
