@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { type Request } from 'express';
@@ -6,6 +6,7 @@ import { type EnvironmentVariables } from '../../config/env.validation.js';
 import { type User } from '../users/user.entity.js';
 import { type ExternalProfile, UsersService } from '../users/users.service.js';
 import { type AccessTokenPayload } from './auth.types.js';
+import { PasswordHasher } from './password/password-hasher.js';
 import { type IssuedRefreshToken, RefreshTokenService } from './refresh-token.service.js';
 
 export interface AccessToken {
@@ -18,6 +19,19 @@ export interface Session {
   refresh: IssuedRefreshToken;
 }
 
+export interface Registration {
+  email: string;
+  password: string;
+  displayName: string;
+}
+
+/** The same answer for an unknown email, a wrong password and a Google-only account. */
+const invalidCredentials = () =>
+  new UnauthorizedException({
+    code: 'INVALID_CREDENTIALS',
+    message: 'Invalid email or password',
+  });
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -25,6 +39,7 @@ export class AuthService {
     private readonly refreshTokens: RefreshTokenService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService<EnvironmentVariables, true>,
+    private readonly passwords: PasswordHasher,
   ) {}
 
   /** Signs in (or up) a user coming back from an identity provider. */
@@ -33,12 +48,42 @@ export class AuthService {
     userAgent: string | null,
     options: { grantAdmin?: boolean } = {},
   ): Promise<Session> {
-    const adminEmails = this.config.get('ADMIN_EMAILS', { infer: true });
-    const grantAdmin =
-      options.grantAdmin === true || adminEmails.includes(profile.email.toLowerCase());
-    const user = await this.users.upsertFromProvider(profile, { grantAdmin });
-    const refresh = await this.refreshTokens.issue(user.id, userAgent);
-    return { user, refresh };
+    const grantAdmin = options.grantAdmin === true || this.isAdminEmail(profile.email);
+    const { user, passwordRemoved } = await this.users.upsertFromProvider(profile, { grantAdmin });
+    if (passwordRemoved) {
+      // Sessions opened with the removed password belong to whoever set it.
+      await this.refreshTokens.revokeAllForUser(user.id);
+    }
+    return this.startSession(user, userAgent);
+  }
+
+  /** Creates a password account and signs it in; 409 `EMAIL_IN_USE` if the email exists. */
+  async register(input: Registration, userAgent: string | null): Promise<Session> {
+    const user = await this.users.createWithPassword(
+      {
+        email: input.email,
+        displayName: input.displayName,
+        passwordHash: await this.passwords.hash(input.password),
+      },
+      { grantAdmin: this.isAdminEmail(input.email) },
+    );
+    return this.startSession(user, userAgent);
+  }
+
+  /** 401 `INVALID_CREDENTIALS` without saying which part was wrong. */
+  async loginWithPassword(
+    credentials: { email: string; password: string },
+    userAgent: string | null,
+  ): Promise<Session> {
+    const found = await this.users.findByEmail(credentials.email);
+    const valid = found?.passwordHash
+      ? await this.passwords.verify(credentials.password, found.passwordHash)
+      : await this.passwords.verifyDummy(credentials.password);
+    if (!found || !valid) {
+      throw invalidCredentials();
+    }
+    const user = this.isAdminEmail(found.email) ? await this.users.grantAdmin(found) : found;
+    return this.startSession(user, userAgent);
   }
 
   async refresh(
@@ -77,5 +122,14 @@ export class AuthService {
 
   get secureCookies(): boolean {
     return this.config.get('WEB_URL', { infer: true }).startsWith('https:');
+  }
+
+  private isAdminEmail(email: string): boolean {
+    return this.config.get('ADMIN_EMAILS', { infer: true }).includes(email.toLowerCase());
+  }
+
+  private async startSession(user: User, userAgent: string | null): Promise<Session> {
+    const refresh = await this.refreshTokens.issue(user.id, userAgent);
+    return { user, refresh };
   }
 }

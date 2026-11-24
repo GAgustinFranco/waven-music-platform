@@ -523,6 +523,107 @@
         ]
       }
     },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [
+          {
+            "name": "X-Requested-With",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Creates a password account and sets the session cookies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email, password or display name."
+          },
+          "403": {
+            "description": "Untrusted origin."
+          },
+          "409": {
+            "description": "`EMAIL_IN_USE`: an account with this email exists."
+          },
+          "429": {
+            "description": "More than 10 auth requests per minute."
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [
+          {
+            "name": "X-Requested-With",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sets the session cookies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`INVALID_CREDENTIALS`, whether the email or the password is wrong."
+          },
+          "403": {
+            "description": "Untrusted origin."
+          },
+          "429": {
+            "description": "More than 10 auth requests per minute."
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/refresh": {
       "post": {
         "operationId": "AuthController_refresh",
@@ -844,6 +945,27 @@
             "bearer": []
           }
         ],
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/browse/showcase": {
+      "get": {
+        "operationId": "ShowcaseController_showcase",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Up to 48 random public album covers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShowcaseDto"
+                }
+              }
+            }
+          }
+        },
         "tags": [
           "catalog"
         ]
@@ -3224,6 +3346,31 @@
           "offset"
         ]
       },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "displayName"
+        ]
+      },
       "AccessTokenDto": {
         "type": "object",
         "properties": {
@@ -3239,6 +3386,24 @@
         "required": [
           "accessToken",
           "expiresIn"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "email",
+          "password"
         ]
       },
       "ImageSetDto": {
@@ -3627,6 +3792,21 @@
           "newReleases",
           "popularTracks",
           "recentlyPlayed"
+        ]
+      },
+      "ShowcaseDto": {
+        "type": "object",
+        "properties": {
+          "covers": {
+            "description": "Random album covers for the sign-in page. Licensed catalog only.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageSetDto"
+            }
+          }
+        },
+        "required": [
+          "covers"
         ]
       },
       "CatalogSource": {

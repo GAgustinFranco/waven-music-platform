@@ -11,6 +11,7 @@ export type Track = Schemas['TrackDto'];
 export type Home = Schemas['HomeDto'];
 export type ArtistDetail = Schemas['ArtistDetailDto'];
 export type AlbumDetail = Schemas['AlbumDetailDto'];
+export type Showcase = Schemas['ShowcaseDto'];
 
 /** Query key factories for the catalog (every catalog key is built here). */
 export const catalogKeys = {
@@ -20,6 +21,7 @@ export const catalogKeys = {
   artist: (id: string) => [...catalogKeys.artists(), id] as const,
   albums: () => [...catalogKeys.all, 'albums'] as const,
   album: (id: string) => [...catalogKeys.albums(), id] as const,
+  showcase: () => [...catalogKeys.all, 'showcase'] as const,
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -30,6 +32,21 @@ export const isUuid = (value: string) => UUID.test(value);
 /** 400 (malformed id) and 404 both mean "there is nothing here" for a detail page. */
 export const isNotFound = (error: unknown) =>
   error instanceof ApiError && (error.statusCode === 404 || error.statusCode === 400);
+
+/** Public covers for the sign-in backdrop. Fetched once per visit. */
+export const showcaseQuery = () =>
+  queryOptions({
+    queryKey: catalogKeys.showcase(),
+    queryFn: async (): Promise<Showcase> => {
+      const { data, error, response } = await api.GET('/browse/showcase');
+      if (!data) {
+        throw toApiError(error, response);
+      }
+      return data;
+    },
+    staleTime: Infinity,
+    retry: false,
+  });
 
 export const homeQuery = () =>
   queryOptions({

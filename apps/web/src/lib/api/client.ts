@@ -9,7 +9,7 @@ export type AccessToken = components['schemas']['AccessTokenDto'];
 export const API_BASE_URL = '/api';
 
 /** The API rejects cookie-authenticated calls without it (CSRF defense). */
-const CSRF_HEADERS = { 'X-Requested-With': 'fetch' };
+export const CSRF_HEADERS = { 'X-Requested-With': 'fetch' };
 
 let refreshInFlight: Promise<string | null> | null = null;
 

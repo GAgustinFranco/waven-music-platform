@@ -159,3 +159,11 @@ export class HomeDto {
   })
   recentlyPlayed: TrackDto[];
 }
+
+export class ShowcaseDto {
+  @ApiProperty({
+    type: [ImageSetDto],
+    description: 'Random album covers for the sign-in page. Licensed catalog only.',
+  })
+  covers: ImageSetDto[];
+}

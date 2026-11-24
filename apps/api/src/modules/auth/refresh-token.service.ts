@@ -89,6 +89,11 @@ export class RefreshTokenService {
     await this.tokens.update({ familyId, revokedAt: IsNull() }, { revokedAt: new Date() });
   }
 
+  /** Signs the user out everywhere. */
+  async revokeAllForUser(userId: string): Promise<void> {
+    await this.tokens.update({ userId, revokedAt: IsNull() }, { revokedAt: new Date() });
+  }
+
   private async create(
     userId: string,
     familyId: string,

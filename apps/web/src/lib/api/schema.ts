@@ -199,6 +199,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/refresh": {
         parameters: {
             query?: never;
@@ -319,6 +351,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["BrowseController_home"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/browse/showcase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ShowcaseController_showcase"];
         put?: never;
         post?: never;
         delete?: never;
@@ -861,11 +909,22 @@ export interface components {
             limit: number;
             offset: number;
         };
+        RegisterDto: {
+            /** Format: email */
+            email: string;
+            password: string;
+            displayName: string;
+        };
         AccessTokenDto: {
             /** @description Short-lived JWT. Keep it in memory only. */
             accessToken: string;
             /** @description Lifetime of the access token in seconds. */
             expiresIn: number;
+        };
+        LoginDto: {
+            /** Format: email */
+            email: string;
+            password: string;
         };
         ImageSetDto: {
             /** @description 64 px */
@@ -968,6 +1027,10 @@ export interface components {
             popularTracks: components["schemas"]["TrackDto"][];
             /** @description Your last distinct public tracks, latest play first (up to 10). */
             recentlyPlayed: components["schemas"]["TrackDto"][];
+        };
+        ShowcaseDto: {
+            /** @description Random album covers for the sign-in page. Licensed catalog only. */
+            covers: components["schemas"]["ImageSetDto"][];
         };
         /** @enum {string} */
         CatalogSource: "upload" | "jamendo" | "local";
@@ -1741,6 +1804,107 @@ export interface operations {
             };
         };
     };
+    AuthController_register: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Requested-With": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDto"];
+            };
+        };
+        responses: {
+            /** @description Creates a password account and sets the session cookies. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenDto"];
+                };
+            };
+            /** @description Invalid email, password or display name. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Untrusted origin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `EMAIL_IN_USE`: an account with this email exists. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description More than 10 auth requests per minute. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_login: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Requested-With": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginDto"];
+            };
+        };
+        responses: {
+            /** @description Sets the session cookies. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenDto"];
+                };
+            };
+            /** @description `INVALID_CREDENTIALS`, whether the email or the password is wrong. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Untrusted origin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description More than 10 auth requests per minute. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AuthController_refresh: {
         parameters: {
             query?: never;
@@ -1992,6 +2156,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ShowcaseController_showcase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up to 48 random public album covers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowcaseDto"];
+                };
             };
         };
     };
