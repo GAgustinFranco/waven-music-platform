@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { useSessionReady } from '@/features/auth/use-session-ready';
 import { billingStatusQuery } from '@/lib/api/billing';
 import { meKeys } from '@/lib/api/queries';
+import { claimActivation } from './activation';
+import { PremiumActivation } from './premium-activation';
 import { checkoutOutcome } from './subscription';
 
 const POLL_MS = 2000;
@@ -23,6 +25,7 @@ export function BillingReturnView() {
   const ready = useSessionReady();
   const queryClient = useQueryClient();
   const [gaveUp, setGaveUp] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
 
   const status = useQuery({
     ...billingStatusQuery(),
@@ -33,6 +36,7 @@ export function BillingReturnView() {
     },
   });
   const outcome = status.data ? checkoutOutcome(status.data) : 'waiting';
+  const subscriptionId = status.data?.subscription?.id ?? null;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setGaveUp(true), GIVE_UP_MS);
@@ -45,6 +49,21 @@ export function BillingReturnView() {
       void queryClient.invalidateQueries({ queryKey: meKeys.all });
     }
   }, [outcome, queryClient]);
+
+  // Celebrate once per activation (the API confirmed it, never the return URL).
+  // Claiming in the frame, not the effect, keeps Strict Mode's double run from
+  // spending the claim on an effect that is torn down at once.
+  useEffect(() => {
+    if (outcome !== 'premium' || !subscriptionId) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      if (claimActivation(window.localStorage, subscriptionId)) {
+        setCelebrating(true);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [outcome, subscriptionId]);
 
   const view =
     outcome === 'premium'
@@ -101,6 +120,7 @@ export function BillingReturnView() {
           </Button>
         </div>
       </section>
+      <PremiumActivation open={celebrating} onOpenChange={setCelebrating} />
     </div>
   );
 }

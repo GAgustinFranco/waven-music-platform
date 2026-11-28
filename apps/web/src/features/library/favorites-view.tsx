@@ -19,6 +19,7 @@ import type { Track } from '@/lib/api/catalog';
 import { favoritesQuery } from '@/lib/api/library';
 import { pluralize } from '@/lib/format';
 import { type PlaySource, usePlayerStore } from '@/stores/player.store';
+import { GhostMosaic } from './ghost-mosaic';
 import { useLikedSet } from './use-liked';
 
 const SOURCE: PlaySource = { context: 'favorites', id: null };
@@ -121,6 +122,7 @@ export function FavoritesView() {
         ) : (
           <EmptyState
             icon={Heart}
+            backdrop={<GhostMosaic />}
             title="Songs you like will appear here"
             description="Save songs by tapping the heart icon."
           >

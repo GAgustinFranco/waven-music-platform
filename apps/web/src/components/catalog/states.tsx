@@ -12,6 +12,8 @@ interface EmptyStateProps {
   children?: ReactNode;
   /** Heading level that fits the surrounding outline. */
   as?: HeadingLevel;
+  /** Decorative layer painted behind the content (absolutely positioned, `-z-10`). */
+  backdrop?: ReactNode;
 }
 
 export function EmptyState({
@@ -20,9 +22,11 @@ export function EmptyState({
   description,
   children,
   as: Heading = 'h2',
+  backdrop,
 }: EmptyStateProps) {
   return (
-    <div className="bg-surface flex flex-col items-center gap-3 rounded-md px-6 py-10 text-center">
+    <div className="bg-surface relative isolate flex flex-col items-center gap-3 rounded-md px-6 py-10 text-center">
+      {backdrop}
       <EmptyIllustration icon={Icon} />
       <Heading className="text-base font-semibold">{title}</Heading>
       {description ? <p className="text-muted-foreground max-w-sm text-sm">{description}</p> : null}

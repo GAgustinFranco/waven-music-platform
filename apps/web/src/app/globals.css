@@ -569,6 +569,51 @@
       );
   }
 
+  /*
+   * Premium plan card: a light that runs slowly around the border (a conic
+   * gradient masked to a 2px ring). Under reduced motion it stays still.
+   */
+  .border-beam {
+    position: relative;
+    isolation: isolate;
+  }
+  .border-beam::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    padding: 2px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--beam-angle),
+      transparent 0% 60%,
+      var(--accent) 78%,
+      var(--accent-2) 88%,
+      transparent 100%
+    );
+    mask:
+      linear-gradient(black 0 0) content-box,
+      linear-gradient(black 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: border-beam 7s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .border-beam::before {
+      animation: none;
+    }
+  }
+
+  /* Ghost mosaic (features/library): keeps the empty state's text on solid --surface. */
+  .ghost-mosaic-scrim {
+    background: radial-gradient(
+      ellipse at center,
+      var(--surface) 25%,
+      color-mix(in srgb, var(--surface) 65%, transparent) 55%,
+      color-mix(in srgb, var(--surface) 15%, transparent)
+    );
+  }
+
   /* Album/artist header: the API's dominant color (already AA with --text) fading into --bg. */
   .dominant-header {
     background-image: linear-gradient(
@@ -588,6 +633,17 @@
       color-mix(in srgb, var(--text) 14%, transparent),
       transparent 45%
     );
+  }
+}
+
+@property --beam-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes border-beam {
+  to {
+    --beam-angle: 360deg;
   }
 }
 
