@@ -61,6 +61,16 @@ export function AlbumView() {
         title={data.title}
         image={data.cover}
         dominantColor={data.dominantColor}
+        play={
+          data.tracks.length > 0 ? (
+            <PlayCollectionButton
+              tracks={data.tracks}
+              source={source}
+              label={data.title}
+              size="sm"
+            />
+          ) : null
+        }
       >
         <p className="flex flex-wrap items-center gap-x-1.5">
           <PrefetchLink
