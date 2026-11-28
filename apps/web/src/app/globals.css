@@ -337,6 +337,8 @@
   --spacing-mini-player: 64px;
   --spacing-gutter: 16px;
   --spacing-gutter-lg: 24px;
+  /* Room the app header keeps for the bell and the user menu (compact page bars end here). */
+  --spacing-header-actions: 5rem;
 
   /* Motion: pair with duration-150 (hover) or duration-250 (panels). */
   --ease-standard: var(--motion-ease);
@@ -526,6 +528,18 @@
       to bottom,
       var(--dominant-color, var(--surface-2)),
       var(--bg)
+    );
+  }
+  /* The compact bar's tint, seen through the app header's scrim. */
+  .dominant-bar {
+    background-color: var(--dominant-color, var(--surface-2));
+  }
+  /* A soft light that follows the mouse over the header (--glare-x/--glare-y set inline). */
+  .dominant-glare {
+    background-image: radial-gradient(
+      circle at var(--glare-x, 50%) var(--glare-y, 50%),
+      color-mix(in srgb, var(--text) 14%, transparent),
+      transparent 45%
     );
   }
 }

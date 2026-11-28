@@ -72,6 +72,11 @@ export function FavoritesView() {
         image={null}
         dominantColor={null}
         cover={<LikedSongsCover className={COVER_CLASS} />}
+        play={
+          tracks.length > 0 ? (
+            <PlayCollectionButton tracks={tracks} source={SOURCE} label="Liked Songs" size="sm" />
+          ) : null
+        }
       >
         <p>{pluralize(total, 'track')}</p>
       </DominantHeader>

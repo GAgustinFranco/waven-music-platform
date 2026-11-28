@@ -1,5 +1,6 @@
 import { AudioLines } from 'lucide-react';
 import Link from 'next/link';
+import { AppScrollArea } from '@/components/layout/app-scroll-area';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { MiniPlayer } from '@/components/player/mini-player';
 import { PlayerAnnouncer } from '@/components/player/player-announcer';
@@ -30,11 +31,11 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
 
         <Sidebar />
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <AppScrollArea className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
           <header className="bg-scrim px-gutter lg:px-gutter-lg sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between backdrop-blur-md md:justify-end">
             <Link
               href="/"
-              className="flex items-center gap-2 rounded-md text-lg font-semibold tracking-tight md:hidden"
+              className="in-data-compact-bar:invisible flex items-center gap-2 rounded-md text-lg font-semibold tracking-tight md:hidden"
             >
               <AudioLines aria-hidden="true" className="text-brand size-6" />
               Waven
@@ -48,7 +49,7 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
           <main id="main" tabIndex={-1} className="-mt-16 flex flex-1 flex-col pb-8 outline-none">
             <SessionGate>{children}</SessionGate>
           </main>
-        </div>
+        </AppScrollArea>
 
         <PlayerBar />
         <MiniPlayer />

@@ -65,6 +65,16 @@ export function ArtistView() {
         image={data.image}
         imageShape="round"
         dominantColor={headerColor}
+        play={
+          data.popularTracks.length > 0 ? (
+            <PlayCollectionButton
+              tracks={data.popularTracks}
+              source={source}
+              label={data.name}
+              size="sm"
+            />
+          ) : null
+        }
       >
         <p>{pluralize(data.albums.length, 'album')}</p>
       </DominantHeader>

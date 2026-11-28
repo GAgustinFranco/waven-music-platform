@@ -119,6 +119,11 @@ function Playlist({ playlist }: { playlist: PlaylistDetail }) {
             className={COVER_CLASS}
           />
         }
+        play={
+          tracks.length > 0 ? (
+            <PlayCollectionButton tracks={tracks} source={source} label={playlist.name} size="sm" />
+          ) : null
+        }
       >
         {playlist.description ? (
           <p className="text-muted-foreground mb-1 line-clamp-2">{playlist.description}</p>
