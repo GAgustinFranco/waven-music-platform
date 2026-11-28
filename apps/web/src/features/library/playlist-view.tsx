@@ -45,6 +45,7 @@ import { isNotFound, isUuid, type Track } from '@/lib/api/catalog';
 import { type PlaylistDetail, type PlaylistEntry, playlistQuery } from '@/lib/api/library';
 import { formatTotalDuration, pluralize } from '@/lib/format';
 import { type PlaySource, usePlayerStore } from '@/stores/player.store';
+import { GhostMosaic } from './ghost-mosaic';
 import { useMoveEntry, useRemoveEntry } from './mutations';
 import { DeletePlaylistDialog, EditPlaylistDialog } from './playlist-dialogs';
 import { useLikedSet } from './use-liked';
@@ -182,6 +183,7 @@ function Playlist({ playlist }: { playlist: PlaylistDetail }) {
         ) : (
           <EmptyState
             icon={ListMusic}
+            backdrop={<GhostMosaic />}
             title="This playlist is empty"
             description="Add tracks from any album, artist or list with the “More options” menu of a track."
           >

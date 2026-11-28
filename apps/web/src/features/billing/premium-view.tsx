@@ -94,7 +94,7 @@ function PlanCard({ plan, recurring, current, subscriptionStatus }: PlanCardProp
       aria-labelledby={`${id}-title`}
       className={
         premium
-          ? 'bg-surface border-brand flex flex-col gap-5 rounded-lg border-2 p-6'
+          ? 'bg-surface border-brand/30 border-beam flex flex-col gap-5 rounded-lg border-2 p-6'
           : 'bg-surface border-border flex flex-col gap-5 rounded-lg border p-6'
       }
     >
