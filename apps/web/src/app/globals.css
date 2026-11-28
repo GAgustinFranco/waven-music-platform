@@ -487,6 +487,53 @@
     background: radial-gradient(circle, var(--glow), transparent 70%);
   }
   /*
+   * Now Playing mesh gradient: blurred blobs in the cover's palette (the view
+   * scopes the Dynamic tokens to itself). A scrim on top keeps text at AA.
+   */
+  .now-playing-mesh {
+    --now-playing-blob-size: 70vmax;
+    --now-playing-blob-blur: 90px;
+  }
+  .now-playing-mesh::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--bg) 45%, transparent);
+  }
+  .now-playing-blob {
+    position: absolute;
+    width: var(--now-playing-blob-size);
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    filter: blur(var(--now-playing-blob-blur));
+    transform: translate3d(-50%, -50%, 0);
+    will-change: transform;
+  }
+  .now-playing-blob-1 {
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent) 55%, transparent),
+      transparent 70%
+    );
+  }
+  .now-playing-blob-2 {
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent-2) 45%, transparent),
+      transparent 70%
+    );
+  }
+  .now-playing-blob-3 {
+    background: radial-gradient(circle, var(--glow), transparent 70%);
+  }
+  .now-playing-blob-4 {
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--elevated) 90%, transparent),
+      transparent 70%
+    );
+  }
+  /*
    * Home hero backdrop: masked (not covered with --bg) so it fades into any
    * backdrop. The text sits at the bottom left, where the covers fade out; on
    * phones it spans the width, so the covers stay in the top half.
